@@ -1,0 +1,6 @@
+{
+  "name": "cleanup",
+  "description": "Clean environment and remove accumulated state",
+  "userInvocable": true,
+  "tags": ["environment", "maintenance", "agent"]
+}

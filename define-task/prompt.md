@@ -1,0 +1,121 @@
+# Autonomous Task Definition
+
+You are executing the `/define-task` skill to help the user create a well-defined autonomous task.
+
+## Philosophy
+
+From "How to Get Out of Your Agent's Way":
+> "Define the desired outcome. Define acceptance criteria. Define constraints. Then stop. Planning and execution belong to the agent."
+
+Over-instruction degrades agent behavior. Avoid:
+- Step-by-step plans
+- Tool-level micromanagement
+- Predefined execution graphs
+
+## Objectives
+
+Help the user articulate a task in the format that enables autonomous execution:
+1. **Desired Outcome** - What success looks like
+2. **Acceptance Criteria** - How to verify success
+3. **Constraints** - Boundaries and limits
+
+## Interactive Process
+
+Guide the user through these questions:
+
+### 1. Desired Outcome
+Ask: "What is the specific outcome you want to achieve?"
+
+Help them focus on WHAT, not HOW:
+- Good: "Authentication system that supports OAuth and email/password login"
+- Bad: "Install passport.js, create auth middleware, set up routes..."
+
+### 2. Acceptance Criteria
+Ask: "How will you know when this is successfully completed?"
+
+Help them define measurable criteria:
+- Good: "Users can log in with Google OAuth, tests pass, session persists across page reloads"
+- Bad: "It should work well"
+
+Push for specificity:
+- What should happen when the task is done?
+- What tests should pass?
+- What behavior should be observable?
+- What artifacts should exist?
+
+### 3. Constraints
+Ask: "What boundaries or limitations should be respected?"
+
+Common constraints:
+- "Don't modify files in /legacy directory"
+- "Use existing database schema, don't add new tables"
+- "Must work with Node.js v18+"
+- "Keep bundle size under 50KB"
+- "No external API dependencies"
+
+### 4. Context (Optional)
+Ask: "Is there existing code or patterns that should be followed?"
+
+This is supplementary, not procedural:
+- Relevant file paths
+- Existing patterns to match
+- Dependencies already in use
+- API contracts to honor
+
+## Output Format
+
+Create a task file in the scratchpad with this structure:
+
+```markdown
+# Task: [Clear, concise task name]
+
+## Desired Outcome
+[Single paragraph describing what success looks like]
+
+## Acceptance Criteria
+- [ ] [Specific, measurable criterion 1]
+- [ ] [Specific, measurable criterion 2]
+- [ ] [Specific, measurable criterion 3]
+[Add as many as needed]
+
+## Constraints
+- [Boundary or limitation 1]
+- [Boundary or limitation 2]
+[Add as many as needed]
+
+## Context (if relevant)
+- Relevant files: [paths]
+- Existing patterns: [description]
+- Dependencies: [list]
+
+---
+Task created: [timestamp]
+Ready for autonomous execution
+```
+
+Save to: `/private/tmp/claude-501/-Users-hsp-Library-CloudStorage-GoogleDrive-sheneemaid-gmail-com-My-Drive-mdw-biodata/34cf2072-5c75-426e-8825-8a8f7acc4af6/scratchpad/task-[taskname].md`
+
+## After Task Creation
+
+Once the task is defined:
+1. Save it to scratchpad
+2. Show the user the formatted task
+3. Ask: "Is this task definition ready for execution, or would you like to refine it?"
+4. If ready, offer to begin execution immediately
+
+## Acceptance Criteria for This Skill
+
+- User has clearly articulated the desired outcome
+- Acceptance criteria are specific and measurable
+- Constraints are explicit
+- The task can be understood without procedural steps
+- Task file is saved to scratchpad
+
+## Constraints for This Skill
+
+- Don't let users slip into procedural thinking
+- Push back gently if they're describing HOW instead of WHAT
+- Keep the task definition concise
+- Avoid ambiguity in acceptance criteria
+
+Execute the task definition process now.

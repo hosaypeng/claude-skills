@@ -1,0 +1,53 @@
+# Claude Code Skills Library
+
+A collection of reusable skills for [Claude Code](https://docs.anthropic.com/en/docs/claude-code), Anthropic's agentic coding tool. Each skill encapsulates a specific workflow that Claude can invoke via slash commands.
+
+## Skills
+
+| Skill | Description |
+|-------|-------------|
+| `analyze-page` | Fetch and analyze full webpage content without summarization loss |
+| `audit-skills` | Scan all skills for quality issues, naming violations, and broken references |
+| `audit-vault` | Audit Obsidian vault for broken wikilinks, invalid tags, and missing frontmatter |
+| `cleanup` | Remove Claude session artifacts, system caches, or forensic app traces |
+| `code-review` | Expert code review with senior engineer lens (SOLID, security, tests) |
+| `cost-tips` | Cost optimization strategies and checklist for Claude Code |
+| `define-task` | Create well-defined autonomous task specs with acceptance criteria |
+| `diagnose-all` | Run comprehensive system diagnostics (CPU, memory, disk, network, security) |
+| `diagnose-security` | Run comprehensive security audit (firewall, ports, malware, signatures) |
+| `edit-habit` | Add, remove, or rename habits in the Obsidian habit tracker |
+| `explain` | Explain a file, folder, or entire codebase in the terminal |
+| `explain-visual` | Generate an interactive HTML slide deck explaining a codebase |
+| `extract-biodata` | Extract applicant biodata fields from PDFs into summary tables |
+| `git-status` | Scan all local git repos for uncommitted changes and unpushed commits |
+| `persist-state` | Save current agent work state for resumable workflows |
+| `push` | Commit staged changes and push to GitHub remote |
+| `recover` | Analyze agent failures and provide recovery strategies with rollback |
+| `require-approval` | Create structured approval checkpoints for high-stakes decisions |
+| `setup-benchmarks` | Scaffold testing and benchmark infrastructure for a project |
+| `snapshot-env` | Capture a reproducible environment snapshot with exact versions |
+| `standardize-filenames` | Standardize filenames to lowercase snake_case with ISO dates |
+| `track-cost` | Analyze Claude agent resource usage and token consumption patterns |
+| `update-habits` | Parse habits from Obsidian and push updated heatmap to GitHub Pages |
+
+## Directory Convention
+
+Each skill lives in its own directory under `skills/`:
+
+```
+skill-name/
+  SKILL.md          # Orchestration file (required) — metadata + instructions
+  prompt.md         # Extended prompt content (optional)
+  scripts/          # Shell scripts for heavy lifting (optional)
+    do-something.sh
+```
+
+- **`SKILL.md`** defines the skill metadata (name, description, trigger phrases) and orchestration logic.
+- **`scripts/`** contains executable shell scripts called by the skill.
+- **`prompt.md`** holds long-form prompt content separated from orchestration.
+- Standalone `.md` files (e.g., `cost-tips.md`) are simple reference skills without subdirectories.
+
+## Links
+
+- [Claude Code documentation](https://docs.anthropic.com/en/docs/claude-code)
+- [Claude Code skills guide](https://docs.anthropic.com/en/docs/claude-code/skills)

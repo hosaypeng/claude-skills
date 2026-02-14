@@ -1,0 +1,6 @@
+{
+  "name": "setup-benchmarks",
+  "description": "Scaffold testing and benchmarking infrastructure early in projects",
+  "userInvocable": true,
+  "tags": ["testing", "benchmarks", "quality", "agent"]
+}

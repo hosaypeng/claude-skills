@@ -1,0 +1,6 @@
+{
+  "name": "require-approval",
+  "description": "Create approval checkpoint for high-stakes decisions",
+  "userInvocable": true,
+  "tags": ["oversight", "approval", "safety", "agent"]
+}

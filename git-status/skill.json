@@ -1,0 +1,8 @@
+{
+  "name": "git-status",
+  "command": "git-status",
+  "description": "Check commit/push status of all git repos",
+  "version": "1.0.0",
+  "tags": ["git"],
+  "userInvocable": true
+}

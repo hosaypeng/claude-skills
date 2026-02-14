@@ -1,0 +1,6 @@
+{
+  "name": "track-cost",
+  "description": "View token and tool usage statistics for autonomous agent sessions",
+  "userInvocable": true,
+  "tags": ["cost", "monitoring", "agent", "analytics"]
+}

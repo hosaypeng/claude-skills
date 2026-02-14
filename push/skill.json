@@ -1,0 +1,9 @@
+{
+  "name": "push",
+  "command": "push",
+  "description": "Commit and push changes to GitHub",
+  "version": "1.0.0",
+  "author": "Claude",
+  "tags": ["git", "github", "commit", "push"],
+  "userInvocable": true
+}

@@ -1,0 +1,6 @@
+{
+  "name": "persist-state",
+  "description": "Save agent work state to structured scratchpad for later resumption",
+  "userInvocable": true,
+  "tags": ["state", "persistence", "agent", "scratchpad"]
+}

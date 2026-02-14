@@ -1,0 +1,6 @@
+{
+  "name": "recover",
+  "description": "Analyze failures and provide graceful recovery strategies",
+  "userInvocable": true,
+  "tags": ["error", "recovery", "resilience", "agent"]
+}

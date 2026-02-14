@@ -1,0 +1,8 @@
+{
+  "name": "edit-habit",
+  "command": "edit-habit",
+  "description": "Add, remove, or rename habits across all entries in good_habits.md",
+  "version": "1.0.0",
+  "tags": ["habits", "obsidian"],
+  "userInvocable": true
+}

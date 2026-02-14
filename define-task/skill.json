@@ -1,0 +1,6 @@
+{
+  "name": "define-task",
+  "description": "Create autonomous task definition with outcomes, not procedures",
+  "userInvocable": true,
+  "tags": ["agent", "task", "autonomous", "planning"]
+}

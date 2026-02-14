@@ -1,0 +1,8 @@
+{
+  "name": "update-habits",
+  "command": "update-habits",
+  "description": "Parse habits from Obsidian and push to GitHub Pages",
+  "version": "1.0.0",
+  "tags": ["habits", "github", "obsidian"],
+  "userInvocable": true
+}
