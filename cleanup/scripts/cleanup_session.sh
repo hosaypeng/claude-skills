@@ -43,7 +43,7 @@ echo ""
 # 3. Remove stale lock files
 echo "--- Stale Lock Files ---"
 LOCK_COUNT=0
-for lockfile in /tmp/*.lock /tmp/claude-*.tmp 2>/dev/null; do
+for lockfile in /tmp/*.lock /tmp/claude-*.tmp; do
   if [ -f "$lockfile" ]; then
     size=$(du -sk "$lockfile" 2>/dev/null | awk '{print $1}')
     TOTAL_FREED=$((TOTAL_FREED + size))
