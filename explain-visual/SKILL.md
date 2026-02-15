@@ -145,3 +145,17 @@ Since no external libraries are allowed, build all diagrams with CSS:
 - Ensure text is readable at default zoom (min 16px body text)
 - Architecture diagrams should reflect the ACTUAL codebase, not generic templates
 - If the codebase is very simple (< 5 files), combine slides 4 and 5
+
+## Troubleshooting
+
+**Error: Repository has no recognizable structure**
+Cause: The directory contains only data files, configs, or non-standard project layouts with no detectable tech stack.
+Fix: Fall back to a generic directory overview. Use file extensions and directory names to infer purpose. Ask the user to describe the project if detection fails entirely.
+
+**Error: HTML file write fails**
+Cause: Disk full, permissions issue, or the target path is invalid.
+Fix: Check disk space with `df -h` and directory permissions with `ls -la`. Try writing to an alternate location (e.g., `/tmp/codebase-overview.html`) if the project root isn't writable.
+
+**Error: Generated HTML exceeds 500 lines for large codebases**
+Cause: The project has many components, resulting in verbose slide content.
+Fix: Prioritize the most important components. Limit Key Files to top 8, collapse less critical directories in the tree, and summarize secondary data flows instead of diagramming all of them.

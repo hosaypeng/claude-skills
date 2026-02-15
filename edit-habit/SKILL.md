@@ -40,3 +40,17 @@ python3 scripts/edit_habit.py add Diet "No processed food"
 python3 scripts/edit_habit.py remove "Intermittent fasting"
 python3 scripts/edit_habit.py rename "Mobility" "Yoga / mobility"
 ```
+
+## Troubleshooting
+
+**Error: Python script fails with ModuleNotFoundError or syntax error**
+Cause: Wrong Python version or missing dependencies.
+Fix: Verify `python3 --version` is 3.8+. Run from the correct base directory (`hosaypenggithubio`).
+
+**Error: `all_habits.md` not found**
+Cause: File was moved, renamed, or the working directory is wrong.
+Fix: Confirm the base directory path is correct and that `all_habits.md` exists at the expected location within the repo.
+
+**Error: Habit name not found (for remove/rename)**
+Cause: The habit name doesn't match exactly — check for typos, extra spaces, or case differences.
+Fix: Open `all_habits.md` and search for the habit name. Use the exact string as it appears in the file, including capitalization.

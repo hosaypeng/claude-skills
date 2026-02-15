@@ -112,4 +112,18 @@ project/
 7. Create documentation
 8. Run tests to verify setup
 
+## Troubleshooting
+
+**Error: Unknown or undetectable project type**
+Cause: No recognizable config files (`package.json`, `pyproject.toml`, `go.mod`, etc.) in the working directory.
+Fix: Ask the user what language and test framework they want. Fall back to a generic test structure with shell-based test runners.
+
+**Error: Existing test config conflicts with scaffolded config**
+Cause: The project already has a `jest.config.js`, `pytest.ini`, or similar that contradicts the new setup.
+Fix: Read existing configs first. Extend or merge with what's already there instead of overwriting. If conflicts are irreconcilable, ask the user which config to keep.
+
+**Error: Scaffolded tests fail on first run**
+Cause: Missing dev dependencies, wrong test runner version, or example tests reference non-existent code.
+Fix: Install dev dependencies first (`npm install --save-dev`, `pip install -r requirements-dev.txt`). Ensure example tests only assert trivially true conditions until real code exists.
+
 Execute the benchmark setup now.

@@ -96,3 +96,17 @@ Use this structure for repo/directory explanations:
 - If you find a README.md, incorporate its info but don't just repeat it
 - For monorepos, explain the package/workspace structure
 - Skip node_modules, .git, build artifacts, and other generated directories
+
+## Troubleshooting
+
+**Error: File is unreadable or binary**
+Cause: Target is a compiled binary, image, or non-text file.
+Fix: Skip binary files and focus on source code. If the user points to a binary, explain what it likely is based on its extension and location.
+
+**Error: Empty repository or directory**
+Cause: The directory has no recognizable source files (freshly initialized repo, or only contains generated artifacts).
+Fix: Report that the directory appears empty or contains no source code. Suggest the user check if they're pointing to the right path.
+
+**Error: Permission denied reading files**
+Cause: File or directory permissions prevent access.
+Fix: Ask the user to check permissions with `ls -la`. Files may need `chmod` or the skill may need to run from a different user context.

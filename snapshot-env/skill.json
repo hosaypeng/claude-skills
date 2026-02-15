@@ -1,6 +1,0 @@
-{
-  "name": "snapshot-env",
-  "description": "Capture reproducible environment snapshot for autonomous agent tasks",
-  "userInvocable": true,
-  "tags": ["reproducibility", "environment", "agent", "snapshot"]
-}

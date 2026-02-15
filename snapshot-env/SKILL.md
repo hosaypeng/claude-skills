@@ -226,4 +226,18 @@ Also create human-readable: `scratchpad/snapshots/snapshot-[timestamp].md`
 - Documenting successful autonomous runs
 - Compliance/audit trails
 
+## Troubleshooting
+
+**Error: Tool not found (e.g., `node: command not found`)**
+Cause: The tool isn't installed or isn't in the current PATH.
+Fix: Record the tool as "not installed" in the snapshot instead of failing. Note it in the warnings section so the user knows the snapshot is incomplete for that tool.
+
+**Error: Permission denied running version commands**
+Cause: The tool binary exists but isn't executable, or requires elevated permissions.
+Fix: Skip the tool and note the permission issue in the snapshot. Suggest the user check permissions with `ls -la $(which <tool>)`.
+
+**Error: Scratchpad directory not writable**
+Cause: Permissions or disk space prevent writing snapshot files.
+Fix: Check with `df -h` and `ls -la`. Fall back to writing the snapshot to the current working directory or output it directly to the terminal.
+
 Execute environment snapshot now.

@@ -98,7 +98,7 @@ Task created: [timestamp]
 Ready for autonomous execution
 ```
 
-Save to: `/private/tmp/claude-501/-Users-hsp-Library-CloudStorage-GoogleDrive-sheneemaid-gmail-com-My-Drive-mdw-biodata/34cf2072-5c75-426e-8825-8a8f7acc4af6/scratchpad/task-[taskname].md`
+Save to the current project directory or a user-specified location as `task-[taskname].md`.
 
 ## After Task Creation
 
@@ -122,5 +122,15 @@ Once the task is defined:
 - Push back gently if they're describing HOW instead of WHAT
 - Keep the task definition concise
 - Avoid ambiguity in acceptance criteria
+
+## Troubleshooting
+
+**Error: Scratchpad directory creation fails**
+Cause: Parent directory doesn't exist or path contains invalid characters.
+Fix: Verify the scratchpad path exists with `ls`. Create parent directories with `mkdir -p`. Ensure task name uses only alphanumeric characters, hyphens, and underscores.
+
+**Error: Disk full when saving task file**
+Cause: No remaining disk space on the volume.
+Fix: Check available space with `df -h`. Free up space or save to an alternate location. The task definition can also be output directly to the terminal for the user to save manually.
 
 Execute the task definition process now.

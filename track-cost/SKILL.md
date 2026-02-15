@@ -74,4 +74,18 @@ Period: [Time range]
 - Suggest optimizations if patterns detected
 - Don't overanalyze - keep it practical
 
+## Troubleshooting
+
+**Error: No cost log files found**
+Cause: The expected files at `~/.claude/session-env/` don't exist — either the session logger isn't configured or the directory path changed.
+Fix: Check if the directory exists with `ls ~/.claude/session-env/`. If missing, inform the user that cost tracking data isn't available and suggest verifying the session logger setup.
+
+**Error: Empty or malformed session data**
+Cause: The JSONL log file exists but contains no entries or has corrupted lines.
+Fix: Skip malformed lines and report on whatever valid data exists. If the file is entirely empty, report that no usage data was recorded for the session.
+
+**Error: Historical log files missing for trend comparison**
+Cause: Old log files were cleaned up or this is the first session.
+Fix: Skip the historical trends section and report only on the current session. Note that trend data will become available after multiple sessions.
+
 Execute the cost analysis now.

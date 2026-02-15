@@ -58,8 +58,8 @@ When invoked with `/standardize-filenames`, **execute immediately** without conf
 
 ### 1. Scan Directory
 ```bash
-# Get all files in current directory (non-recursive by default)
-find . -maxdepth 1 -type f -not -name ".*"
+# Get all files in target directory (non-recursive by default, pass --recursive for subdirs)
+bash ~/.claude/skills/standardize-filenames/scripts/standardize.sh [directory] [--recursive]
 ```
 
 ### 2. Analyze Directory Context (CRITICAL)
@@ -169,10 +169,11 @@ If target filename exists:
 
 ### 4. Execute Renames
 
-Execute all renames immediately:
+Execute all renames immediately using `mv` commands. For each file that needs renaming, run:
 ```bash
 mv "original_name.ext" "new_name.ext"
 ```
+Renames are atomic per-file operations and safe to execute individually.
 
 ### 5. Report Results
 

@@ -9,16 +9,10 @@ Check the commit and push status of all git repos under `$HOME`.
 
 ## Instructions
 
-1. Run this command to find all git repos, excluding noise directories:
+1. Run the repo discovery script to find all git repos, excluding noise directories:
 
 ```bash
-find "$HOME" -name ".git" -maxdepth 8 -type d 2>/dev/null \
-  | grep -v "\.local/share" \
-  | grep -v "\.gemini" \
-  | grep -v "node_modules" \
-  | grep -v "\.Trash" \
-  | grep -v "Library/Caches" \
-  | grep -v "\.claude/plugins"
+bash ~/.claude/skills/git-status/scripts/find_repos.sh
 ```
 
 2. For each repo found, check two things:

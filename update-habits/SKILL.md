@@ -1,6 +1,6 @@
 ---
 name: update-habits
-description: Parse habits from Obsidian all_habits.md and push updated heatmap to GitHub Pages. Use when user says 'update heatmap', 'push habits', 'sync habits to site', or after checking habit boxes in Obsidian.
+description: "Parse habits from Obsidian all_habits.md and push updated heatmap to GitHub Pages. Use when user says 'update heatmap', 'push habits', 'sync habits to site', or after checking habit boxes in Obsidian."
 user-invocable: true
 ---
 

@@ -151,4 +151,18 @@ Location: [full path to task directory]
 - Preserving context for tomorrow
 - Sharing work state with other sessions
 
+## Troubleshooting
+
+**Error: Disk full when writing state files**
+Cause: No remaining disk space on the volume.
+Fix: Check available space with `df -h`. Remove old snapshots from `scratchpad/state/` or free space elsewhere. Prioritize saving the state JSON over logs and intermediate files.
+
+**Error: Permission denied writing to scratchpad**
+Cause: The scratchpad directory or its parent has restrictive permissions.
+Fix: Check permissions with `ls -la` on the scratchpad path. Use `chmod` to fix, or ask the user to specify an alternate writable location.
+
+**Error: Scratchpad directory doesn't exist and can't be created**
+Cause: The parent path is invalid or on a read-only filesystem.
+Fix: Verify the intended scratchpad path exists. Create it with `mkdir -p`. If on a read-only volume, output the state snapshot to the terminal so the user can save it manually.
+
 Execute state persistence now.
