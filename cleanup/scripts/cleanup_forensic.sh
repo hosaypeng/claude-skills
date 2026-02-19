@@ -5,18 +5,11 @@ set -e
 # Scans and removes artifacts left behind by uninstalled apps: quarantine events,
 # app usage history, saved states, orphaned preferences, and more.
 
+source "$(dirname "$0")/_helpers.sh"
+
 HOME_DIR="$HOME"
 LOG_FILE="$HOME_DIR/.claude/purge-artifacts-log.txt"
-TOTAL_FREED=0
 INSTALLED_IDS="/tmp/installed_bundle_ids_$$.txt"
-
-safe_size() {
-  if [ -e "$1" ]; then
-    du -sk "$1" 2>/dev/null | awk '{print $1}'
-  else
-    echo 0
-  fi
-}
 
 echo "=== Forensic Trace Cleanup ==="
 echo ""
@@ -32,7 +25,7 @@ APP_COUNT=$(wc -l < "$INSTALLED_IDS" | tr -d ' ')
 echo "Found $APP_COUNT installed app bundle IDs."
 echo ""
 
-# Phase 2: Scan all categories
+# === Category A: Execution & Download History ===
 echo "--- Category A: Execution & Download History ---"
 
 # Quarantine Events
@@ -51,11 +44,8 @@ fi
 KC_DB="$HOME_DIR/Library/Application Support/Knowledge/knowledgeC.db"
 if [ -f "$KC_DB" ]; then
   KC_SIZE=$(safe_size "$KC_DB")
-  echo "KnowledgeC Database: $((KC_SIZE / 1024))MB"
-  rm -f "$KC_DB" 2>/dev/null && {
-    TOTAL_FREED=$((TOTAL_FREED + KC_SIZE))
-    echo "  Removed."
-  } || echo "  TCC-protected. Delete manually via Finder: ~/Library/Application Support/Knowledge/" >&2
+  echo "KnowledgeC Database: $(format_size $KC_SIZE)"
+  safe_trash "$KC_DB" 2>/dev/null || echo "  TCC-protected. Delete manually via Finder: ~/Library/Application Support/Knowledge/" >&2
 else
   echo "KnowledgeC Database: not found"
 fi
@@ -64,9 +54,8 @@ fi
 CD_DIR="$HOME_DIR/Library/Application Support/com.apple.DuetExpertCenter"
 if [ -d "$CD_DIR" ]; then
   CD_SIZE=$(safe_size "$CD_DIR")
-  TOTAL_FREED=$((TOTAL_FREED + CD_SIZE))
-  rm -rf "$CD_DIR"/* 2>/dev/null || true
-  echo "CoreDuet Database: cleared ($((CD_SIZE / 1024))MB)"
+  safe_trash_contents "$CD_DIR"
+  echo "CoreDuet Database: cleared ($(format_size $CD_SIZE))"
 else
   echo "CoreDuet Database: not found"
 fi
@@ -74,7 +63,9 @@ fi
 # Recent Items
 RI_DIR="$HOME_DIR/Library/Application Support/com.apple.sharedfilelist"
 if [ -d "$RI_DIR" ]; then
-  rm -f "$RI_DIR"/*.sfl2 "$RI_DIR"/*.sfl3 2>/dev/null || true
+  for f in "$RI_DIR"/*.sfl2 "$RI_DIR"/*.sfl3; do
+    [ -f "$f" ] && safe_trash "$f"
+  done
   echo "Recent Items: cleared"
 else
   echo "Recent Items: not found"
@@ -83,9 +74,7 @@ fi
 # Spotlight Shortcuts
 SS_DIR="$HOME_DIR/Library/Application Support/com.apple.spotlight.Shortcuts"
 if [ -d "$SS_DIR" ]; then
-  SS_SIZE=$(safe_size "$SS_DIR")
-  TOTAL_FREED=$((TOTAL_FREED + SS_SIZE))
-  rm -rf "$SS_DIR" 2>/dev/null || true
+  safe_trash "$SS_DIR"
   echo "Spotlight Shortcuts: cleared"
 else
   echo "Spotlight Shortcuts: not found"
@@ -97,6 +86,7 @@ echo "Launch Services: rebuilding database..."
 echo "  Done."
 echo ""
 
+# === Category B: Orphaned App Data ===
 echo "--- Category B: Orphaned App Data ---"
 
 # Saved Application State (orphans)
@@ -104,12 +94,11 @@ SAS_DIR="$HOME_DIR/Library/Saved Application State"
 if [ -d "$SAS_DIR" ]; then
   ORPHAN_COUNT=0
   for state_dir in "$SAS_DIR"/*/; do
+    [ -d "$state_dir" ] || continue
     bundle_id=$(basename "$state_dir")
     [[ "$bundle_id" == com.apple.* ]] && continue
     if ! grep -q "^${bundle_id}$" "$INSTALLED_IDS" 2>/dev/null; then
-      size=$(safe_size "$state_dir")
-      TOTAL_FREED=$((TOTAL_FREED + size))
-      rm -rf "$state_dir" 2>/dev/null || true
+      safe_trash "$state_dir"
       ORPHAN_COUNT=$((ORPHAN_COUNT + 1))
     fi
   done
@@ -118,22 +107,24 @@ else
   echo "Saved Application State: not found"
 fi
 
-# Orphaned Containers
+# Orphaned Containers (report only — SIP-protected, cannot be moved by Terminal)
 CONT_DIR="$HOME_DIR/Library/Containers"
 if [ -d "$CONT_DIR" ]; then
   ORPHAN_COUNT=0
   for container in "$CONT_DIR"/*/; do
+    [ -d "$container" ] || continue
     bundle_id=$(basename "$container")
     [[ "$bundle_id" == com.apple.* ]] && continue
     [[ "$bundle_id" =~ ^[A-F0-9]{8}- ]] && continue
     if ! grep -q "^${bundle_id}$" "$INSTALLED_IDS" 2>/dev/null; then
-      size=$(safe_size "$container")
-      TOTAL_FREED=$((TOTAL_FREED + size))
-      rm -rf "$container" 2>/dev/null || true
       ORPHAN_COUNT=$((ORPHAN_COUNT + 1))
     fi
   done
-  echo "Orphaned Containers: removed $ORPHAN_COUNT"
+  if [ "$ORPHAN_COUNT" -gt 0 ]; then
+    echo "Orphaned Containers: $ORPHAN_COUNT found (SIP-protected — delete via Finder if needed)"
+  else
+    echo "Orphaned Containers: none"
+  fi
 else
   echo "Containers directory: not found"
 fi
@@ -143,12 +134,11 @@ GC_DIR="$HOME_DIR/Library/Group Containers"
 if [ -d "$GC_DIR" ]; then
   ORPHAN_COUNT=0
   for gc in "$GC_DIR"/*/; do
+    [ -d "$gc" ] || continue
     gid=$(basename "$gc")
     [[ "$gid" == *apple* ]] && continue
     if ! grep -q "$(echo "$gid" | sed 's/^[^.]*\.//')" "$INSTALLED_IDS" 2>/dev/null; then
-      size=$(safe_size "$gc")
-      TOTAL_FREED=$((TOTAL_FREED + size))
-      rm -rf "$gc" 2>/dev/null || true
+      safe_trash "$gc"
       ORPHAN_COUNT=$((ORPHAN_COUNT + 1))
     fi
   done
@@ -162,12 +152,11 @@ HS_DIR="$HOME_DIR/Library/HTTPStorages"
 if [ -d "$HS_DIR" ]; then
   ORPHAN_COUNT=0
   for storage in "$HS_DIR"/*/; do
+    [ -d "$storage" ] || continue
     bundle_id=$(basename "$storage")
     [[ "$bundle_id" == com.apple.* ]] && continue
     if ! grep -q "^${bundle_id}$" "$INSTALLED_IDS" 2>/dev/null; then
-      size=$(safe_size "$storage")
-      TOTAL_FREED=$((TOTAL_FREED + size))
-      rm -rf "$storage" 2>/dev/null || true
+      safe_trash "$storage"
       ORPHAN_COUNT=$((ORPHAN_COUNT + 1))
     fi
   done
@@ -175,8 +164,61 @@ if [ -d "$HS_DIR" ]; then
 else
   echo "HTTPStorages: not found"
 fi
+
+# Orphaned Application Support directories
+AS_DIR="$HOME_DIR/Library/Application Support"
+if [ -d "$AS_DIR" ]; then
+  ORPHAN_COUNT=0
+  for support_dir in "$AS_DIR"/*/; do
+    [ -d "$support_dir" ] || continue
+    dir_name=$(basename "$support_dir")
+    # Skip Apple and system directories
+    [[ "$dir_name" == com.apple.* ]] && continue
+    [[ "$dir_name" == Apple ]] && continue
+    [[ "$dir_name" == Knowledge ]] && continue
+    [[ "$dir_name" == CrashReporter ]] && continue
+    # Check if it looks like a bundle ID and is orphaned
+    if [[ "$dir_name" == *.*.* ]] && ! grep -q "^${dir_name}$" "$INSTALLED_IDS" 2>/dev/null; then
+      size=$(safe_size "$support_dir")
+      echo "  Orphaned: $dir_name ($(format_size $size))"
+      safe_trash "$support_dir"
+      ORPHAN_COUNT=$((ORPHAN_COUNT + 1))
+    fi
+  done
+  echo "Orphaned Application Support: removed $ORPHAN_COUNT"
+else
+  echo "Application Support: not found"
+fi
+
+# Orphaned Preferences (plist files)
+echo ""
+echo "--- Category B2: Orphaned Preferences ---"
+PREF_DIR="$HOME_DIR/Library/Preferences"
+if [ -d "$PREF_DIR" ]; then
+  ORPHAN_COUNT=0
+  for plist in "$PREF_DIR"/*.plist; do
+    [ -f "$plist" ] || continue
+    plist_name=$(basename "$plist" .plist)
+    # Skip Apple plists
+    [[ "$plist_name" == com.apple.* ]] && continue
+    [[ "$plist_name" == Apple* ]] && continue
+    # Skip system/known plists
+    [[ "$plist_name" == loginwindow ]] && continue
+    [[ "$plist_name" == ByHost ]] && continue
+    # Check if bundle ID matches an installed app
+    if ! grep -q "^${plist_name}$" "$INSTALLED_IDS" 2>/dev/null; then
+      # Only flag it, don't auto-delete plists (some belong to CLI tools, not .app bundles)
+      echo "  Possibly orphaned: $plist_name"
+      ORPHAN_COUNT=$((ORPHAN_COUNT + 1))
+    fi
+  done
+  echo "Possibly orphaned preferences: $ORPHAN_COUNT (review manually — some belong to CLI tools)"
+else
+  echo "Preferences: not found"
+fi
 echo ""
 
+# === Category C: Background Services ===
 echo "--- Category C: Background Services ---"
 
 # Orphaned LaunchAgents (user)
@@ -189,7 +231,7 @@ if [ -d "$LA_DIR" ]; then
     if [ -n "$prog" ] && [ ! -e "$prog" ]; then
       echo "  Orphaned LaunchAgent: $(basename "$plist") -> $prog"
       launchctl bootout "gui/$(id -u)" "$plist" 2>/dev/null || true
-      rm -f "$plist" 2>/dev/null || true
+      safe_trash "$plist"
       ORPHAN_COUNT=$((ORPHAN_COUNT + 1))
     fi
   done
@@ -197,17 +239,39 @@ if [ -d "$LA_DIR" ]; then
 else
   echo "LaunchAgents: not found"
 fi
+
+# Login Items referencing deleted apps
+echo ""
+echo "Checking login items..."
+LOGIN_ITEMS=$(osascript -e 'tell application "System Events" to get the name of every login item' 2>/dev/null || true)
+if [ -n "$LOGIN_ITEMS" ]; then
+  echo "  Current login items: $LOGIN_ITEMS"
+  echo "  (Review manually — remove items for uninstalled apps via System Settings > Login Items)"
+fi
+
+# Orphaned kernel extensions (report only)
+echo ""
+echo "Checking kernel extensions..."
+if [ -d "/Library/Extensions" ]; then
+  KEXT_COUNT=0
+  for kext in /Library/Extensions/*.kext; do
+    [ -d "$kext" ] || continue
+    echo "  Found: $(basename "$kext") (report only — requires sudo to remove)"
+    KEXT_COUNT=$((KEXT_COUNT + 1))
+  done
+  [ "$KEXT_COUNT" -eq 0 ] && echo "  No third-party kernel extensions."
+fi
 echo ""
 
+# === Category D: Logs & Crash Reports ===
 echo "--- Category D: Logs & Crash Reports ---"
 
-# Crash reports for deleted apps
+# Crash reports
 DR_DIR="$HOME_DIR/Library/Logs/DiagnosticReports"
 if [ -d "$DR_DIR" ]; then
   DR_SIZE=$(safe_size "$DR_DIR")
-  TOTAL_FREED=$((TOTAL_FREED + DR_SIZE))
-  rm -rf "$DR_DIR"/* 2>/dev/null || true
-  echo "DiagnosticReports: cleared ($((DR_SIZE / 1024))MB)"
+  safe_trash_contents "$DR_DIR"
+  echo "DiagnosticReports: cleared ($(format_size $DR_SIZE))"
 else
   echo "DiagnosticReports: not found"
 fi
@@ -216,23 +280,22 @@ fi
 MD_DIR="$HOME_DIR/Library/Logs/CrashReporter/MobileDevice"
 if [ -d "$MD_DIR" ]; then
   MD_SIZE=$(safe_size "$MD_DIR")
-  TOTAL_FREED=$((TOTAL_FREED + MD_SIZE))
-  rm -rf "$MD_DIR"/* 2>/dev/null || true
-  echo "MobileDevice Logs: cleared ($((MD_SIZE / 1024))MB)"
+  safe_trash_contents "$MD_DIR"
+  echo "MobileDevice Logs: cleared ($(format_size $MD_SIZE))"
 else
   echo "MobileDevice Logs: not found"
 fi
 echo ""
 
+# === Category E: Privacy Traces ===
 echo "--- Category E: Privacy Traces ---"
 
 # Siri Suggestions
 SIRI_DIR="$HOME_DIR/Library/Application Support/com.apple.siri.suggestions"
 if [ -d "$SIRI_DIR" ]; then
   SIRI_SIZE=$(safe_size "$SIRI_DIR")
-  TOTAL_FREED=$((TOTAL_FREED + SIRI_SIZE))
-  rm -rf "$SIRI_DIR"/* 2>/dev/null || true
-  echo "Siri Suggestions: cleared ($((SIRI_SIZE / 1024))MB)"
+  safe_trash_contents "$SIRI_DIR"
+  echo "Siri Suggestions: cleared ($(format_size $SIRI_SIZE))"
 else
   echo "Siri Suggestions: not found"
 fi
@@ -244,7 +307,7 @@ rm -f "$INSTALLED_IDS"
 # Summary
 FREED_MB=$((TOTAL_FREED / 1024))
 echo "=== Forensic Trace Cleanup Complete ==="
-echo "Space recovered: approximately ${FREED_MB}MB (${TOTAL_FREED}K)"
+echo "Space recovered: approximately $(format_size $TOTAL_FREED)"
 echo ""
 echo "NOTE: Some items (KnowledgeC, TCC database) may require manual deletion"
 echo "via Finder due to macOS security protections. Never grant Full Disk Access"
@@ -256,7 +319,7 @@ cat >> "$LOG_FILE" <<LOGEOF
 ========================================
 Forensic Cleanup: $(date '+%Y-%m-%d %H:%M:%S')
 ========================================
-Space Recovered: ${FREED_MB}MB (${TOTAL_FREED}K)
+Space Recovered: $(format_size $TOTAL_FREED)
 Categories: Quarantine events, app usage history, orphaned data,
   background services, crash reports, privacy traces
 Status: Success
