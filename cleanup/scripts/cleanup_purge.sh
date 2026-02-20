@@ -4,6 +4,7 @@ set -e
 # Project Artifact Purge
 # Scans code directories for stale build artifacts (node_modules, target/, .build/, etc.)
 # and moves them to Trash. Only targets artifacts older than 30 days by default.
+# Compatible with macOS bash 3.2 (no associative arrays).
 
 source "$(dirname "$0")/_helpers.sh"
 
@@ -52,28 +53,14 @@ for d in "${SCAN_DIRS[@]}"; do
 done
 echo ""
 
-# Artifact patterns to look for (directory name -> description)
-# Only target directories that are unambiguously generated artifacts.
+# Artifact patterns (bash 3.2 compatible — no associative arrays)
+# Only unambiguously generated artifacts.
 # Excluded: build, dist, .output, coverage — too generic, often git-tracked.
-declare -A ARTIFACT_NAMES=(
-  [node_modules]="Node.js dependencies"
-  [.next]="Next.js build"
-  [target]="Rust/Java build"
-  [.build]="Swift build"
-  [__pycache__]="Python bytecode"
-  [.pytest_cache]="Pytest cache"
-  [.mypy_cache]="Mypy cache"
-  [.ruff_cache]="Ruff cache"
-  [.tox]="Tox environments"
-  [.venv]="Python virtualenv"
-  [venv]="Python virtualenv"
-  [.gradle]="Gradle cache"
-  [.parcel-cache]="Parcel bundler cache"
-  [.turbo]="Turborepo cache"
-  [.angular]="Angular cache"
-  [.nuxt]="Nuxt build"
-  [.svelte-kit]="SvelteKit build"
-  [.expo]="Expo cache"
+ARTIFACT_NAMES=(
+  node_modules .next target .build
+  __pycache__ .pytest_cache .mypy_cache .ruff_cache .tox
+  .venv venv
+  .gradle .parcel-cache .turbo .angular .nuxt .svelte-kit .expo
 )
 
 ARTIFACT_COUNT=0
@@ -82,7 +69,7 @@ TOTAL_SIZE=0
 for scan_dir in "${SCAN_DIRS[@]}"; do
   echo "--- Scanning: $scan_dir ---"
 
-  for artifact_name in "${!ARTIFACT_NAMES[@]}"; do
+  for artifact_name in "${ARTIFACT_NAMES[@]}"; do
     while IFS= read -r found_dir; do
       [ -z "$found_dir" ] && continue
 
@@ -102,7 +89,7 @@ for scan_dir in "${SCAN_DIRS[@]}"; do
       [ "$size" -lt 1024 ] && continue
 
       project=$(basename "$parent")
-      echo "  $project/$artifact_name ($(format_size $size)) — ${ARTIFACT_NAMES[$artifact_name]}"
+      echo "  $project/$artifact_name ($(format_size $size))"
       safe_trash "$found_dir"
       ARTIFACT_COUNT=$((ARTIFACT_COUNT + 1))
       TOTAL_SIZE=$((TOTAL_SIZE + size))
