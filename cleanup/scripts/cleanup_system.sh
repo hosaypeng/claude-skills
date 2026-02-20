@@ -25,6 +25,8 @@ if [ -d "$TRASH_DIR" ]; then
 fi
 
 # 1. User Library Caches (preserving files modified in last 7 days)
+# Skip caches for browsers, messaging apps, and other daily-use apps
+# whose auth/session state may live in cache directories.
 echo "--- User Library Caches ---"
 CACHE_DIR="$HOME_DIR/Library/Caches"
 if [ -d "$CACHE_DIR" ]; then
@@ -32,9 +34,23 @@ if [ -d "$CACHE_DIR" ]; then
   echo "Total cache size: $(format_size $CACHE_SIZE)"
   while IFS= read -r dir; do
     [ -z "$dir" ] && continue
+    cache_name=$(basename "$dir")
+    # Skip browsers (report-only in section 3)
+    case "$cache_name" in
+      *Google*|*Chrome*|*Safari*|*Firefox*|*Brave*) continue ;;
+    esac
+    # Skip messaging apps (auth tokens often in cache)
+    case "$cache_name" in
+      *whatsapp*|*WhatsApp*|*telegram*|*Telegram*|*tencent*|*WeChat*) continue ;;
+      *Signal*|*discord*|*Discord*|*Slack*|*slack*) continue ;;
+    esac
+    # Skip other daily-use apps
+    case "$cache_name" in
+      *Surge*|*surge*) continue ;;
+    esac
     safe_trash "$dir"
   done < <(find "$CACHE_DIR" -mindepth 1 -maxdepth 1 -type d -not -newermt "7 days ago" 2>/dev/null)
-  echo "  Cleared caches older than 7 days."
+  echo "  Cleared caches older than 7 days (skipped browsers, messaging, and daily apps)."
 else
   echo "  No user cache directory found."
 fi
@@ -46,7 +62,7 @@ CRASH_DIR="$HOME_DIR/Library/Application Support/CrashReporter"
 [ -d "$CRASH_DIR" ] && safe_trash_contents "$CRASH_DIR"
 echo ""
 
-# 3. Browser Caches
+# 3. Browser Caches (report only — clearing these degrades daily browsing performance)
 echo "--- Browser Caches ---"
 for browser_cache in \
   "$HOME_DIR/Library/Caches/Google/Chrome" \
@@ -54,7 +70,7 @@ for browser_cache in \
   "$HOME_DIR/Library/Caches/Firefox"; do
   if [ -d "$browser_cache" ]; then
     size=$(safe_size "$browser_cache")
-    safe_trash "$browser_cache"
+    echo "  $(basename "$(dirname "$browser_cache")")/$(basename "$browser_cache"): $(format_size $size) (report only — clear manually if needed)"
   fi
 done
 echo ""
@@ -146,18 +162,22 @@ if command -v docker &>/dev/null && docker info &>/dev/null 2>&1; then
 fi
 echo ""
 
-# 5. Sandboxed App Caches
+# 5. Sandboxed App Caches (Apple apps only — third-party caches can contain auth tokens)
 echo "--- Sandboxed App Caches ---"
 SANDBOX_DIR="$HOME_DIR/Library/Containers"
 if [ -d "$SANDBOX_DIR" ]; then
   SANDBOX_TOTAL=0
   for cache_dir in "$SANDBOX_DIR"/*/Data/Library/Caches; do
     [ -d "$cache_dir" ] || continue
+    # Only clear Apple app caches — third-party apps (WhatsApp, Telegram, etc.)
+    # may store session/auth data in their cache directories
+    container_id=$(echo "$cache_dir" | sed "s|$SANDBOX_DIR/||" | cut -d/ -f1)
+    [[ "$container_id" != com.apple.* ]] && continue
     size=$(safe_size "$cache_dir")
     [ "$size" -gt 100 ] && safe_trash_contents "$cache_dir"
     SANDBOX_TOTAL=$((SANDBOX_TOTAL + size))
   done
-  echo "  Sandboxed caches scanned: $(format_size $SANDBOX_TOTAL)"
+  echo "  Sandboxed caches scanned (Apple apps only): $(format_size $SANDBOX_TOTAL)"
 else
   echo "  No sandboxed containers found."
 fi

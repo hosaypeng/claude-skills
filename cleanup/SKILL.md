@@ -48,12 +48,12 @@ Removes Claude-specific session artifacts:
 
 ### System Mode (`/cleanup system`)
 Frees disk space by clearing caches:
-- User library caches (preserves files modified in last 7 days)
-- Browser caches (Chrome, Safari, Firefox)
+- User library caches (preserves files modified in last 7 days; **skips browsers, messaging apps, and daily-use apps**)
+- Browser caches — Chrome, Safari, Firefox (**reported only**, not auto-deleted — clearing degrades daily performance)
 - Development caches: Homebrew, npm, pip, uv, Yarn, pnpm, Go, Cargo, Maven, Gradle, CocoaPods, Composer, Ruby Bundler, Xcode DerivedData
-- Sandboxed app caches (`~/Library/Containers/*/Data/Library/Caches`)
-- App-specific caches (Discord, VS Code, Slack, Zoom)
-- Application Support logs and caches (scans all `~/Library/Application Support/*/` subdirs for Cache/Logs/GPUCache)
+- Sandboxed app caches — **Apple apps only** (`com.apple.*`); third-party app caches are skipped (may contain auth/session tokens)
+- App-specific caches (Discord, VS Code, Slack, Zoom cache dir only)
+- Application Support logs and caches (scans all `~/Library/Application Support/*/` subdirs for Cache/Logs/GPUCache; **skips Claude, obsidian, Apple, Knowledge, MobileSync**)
 - Xcode Archives and CoreSimulator (reported, not auto-deleted)
 - Docker disk usage (reported, not auto-deleted)
 - iOS device backups (reported, not auto-deleted)

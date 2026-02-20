@@ -137,7 +137,19 @@ if [ -d "$GC_DIR" ]; then
     [ -d "$gc" ] || continue
     gid=$(basename "$gc")
     [[ "$gid" == *apple* ]] && continue
-    if ! grep -q "$(echo "$gid" | sed 's/^[^.]*\.//')" "$INSTALLED_IDS" 2>/dev/null; then
+    # Strip team ID or "group" prefix to get approximate bundle ID
+    extracted=$(echo "$gid" | sed 's/^[^.]*\.//')
+    # Check if any installed bundle ID is a prefix of the extracted name
+    # e.g. "net.whatsapp.WhatsApp" should match "net.whatsapp.WhatsApp.shared"
+    match_found=false
+    while IFS= read -r bid; do
+      [ -z "$bid" ] && continue
+      if [ "${extracted#$bid}" != "$extracted" ]; then
+        match_found=true
+        break
+      fi
+    done < "$INSTALLED_IDS"
+    if [ "$match_found" = false ]; then
       safe_trash "$gc"
       ORPHAN_COUNT=$((ORPHAN_COUNT + 1))
     fi
