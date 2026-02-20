@@ -13,11 +13,22 @@ echo "=== Session Artifact Cleanup ==="
 echo ""
 
 # 1. Scratchpad directories under /private/tmp/claude-*
+# IMPORTANT: Skip the current session's temp dir (/private/tmp/claude-<UID>/)
+# because Claude Code uses it for Bash tool output capture and task files.
+# Moving it mid-execution destroys all stdout from the running command.
 echo "--- Scratchpad Directories ---"
 SCRATCHPAD_BASE="/private/tmp"
+CURRENT_CLAUDE_TMP="$SCRATCHPAD_BASE/claude-$(id -u)"
 if ls -d "$SCRATCHPAD_BASE"/claude-* 1>/dev/null 2>&1; then
   for dir in "$SCRATCHPAD_BASE"/claude-*/; do
-    [ -d "$dir" ] && safe_trash "$dir"
+    [ -d "$dir" ] || continue
+    # Normalize trailing slash for comparison
+    dir_clean="${dir%/}"
+    if [ "$dir_clean" = "$CURRENT_CLAUDE_TMP" ]; then
+      echo "  Skipping active session: $dir_clean"
+      continue
+    fi
+    safe_trash "$dir"
   done
 else
   echo "  No scratchpad directories found."

@@ -1,8 +1,26 @@
 #!/bin/bash
+set -e
 # Shared helpers for cleanup scripts.
 # Source this file: source "$(dirname "$0")/_helpers.sh"
 
 TOTAL_FREED=0
+WHITELIST_FILE="$HOME/.claude/cleanup-whitelist.txt"
+
+# Check if a path matches any whitelist pattern.
+# Returns 0 (true) if whitelisted, 1 (false) if not.
+is_whitelisted() {
+  local path="$1"
+  [ ! -f "$WHITELIST_FILE" ] && return 1
+  while IFS= read -r pattern; do
+    [ -z "$pattern" ] && continue
+    [[ "$pattern" == \#* ]] && continue
+    # shellcheck disable=SC2254
+    case "$path" in
+      $pattern) return 0 ;;
+    esac
+  done < "$WHITELIST_FILE"
+  return 1
+}
 
 # Returns size in KB for a path, 0 if missing.
 safe_size() {
@@ -19,6 +37,10 @@ safe_size() {
 safe_trash() {
   local path="$1"
   if [ -e "$path" ]; then
+    if is_whitelisted "$path"; then
+      echo "  Skipped (whitelisted): $path"
+      return 0
+    fi
     local size
     size=$(safe_size "$path")
     TOTAL_FREED=$((TOTAL_FREED + size))
@@ -37,6 +59,10 @@ safe_trash() {
 safe_trash_contents() {
   local dir="$1"
   if [ -d "$dir" ]; then
+    if is_whitelisted "$dir"; then
+      echo "  Skipped (whitelisted): $dir"
+      return 0
+    fi
     local size
     size=$(safe_size "$dir")
     local count=0

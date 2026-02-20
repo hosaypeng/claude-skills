@@ -29,6 +29,12 @@ echo ""
 echo ""
 echo ""
 
+echo ">>> Running Project Artifact Purge..."
+echo ""
+"$SCRIPT_DIR/cleanup_purge.sh"
+echo ""
+echo ""
+
 echo "========================================"
 echo "  Full Cleanup Complete"
 echo "========================================"

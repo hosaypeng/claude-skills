@@ -110,6 +110,14 @@ COCOAPODS_CACHE="$HOME_DIR/.cocoapods"
 COMPOSER_CACHE="$HOME_DIR/.composer/cache"
 [ -d "$COMPOSER_CACHE" ] && safe_trash "$COMPOSER_CACHE"
 
+# uv (Python)
+UV_CACHE="$HOME_DIR/.cache/uv"
+[ -d "$UV_CACHE" ] && safe_trash "$UV_CACHE"
+
+# Ruby Bundler
+BUNDLER_CACHE="$HOME_DIR/.bundle/cache"
+[ -d "$BUNDLER_CACHE" ] && safe_trash "$BUNDLER_CACHE"
+
 # Xcode DerivedData
 XCODE_DD="$HOME_DIR/Library/Developer/Xcode/DerivedData"
 if [ -d "$XCODE_DD" ]; then
@@ -138,7 +146,69 @@ if command -v docker &>/dev/null && docker info &>/dev/null 2>&1; then
 fi
 echo ""
 
-# 5. iOS Device Backups (report only)
+# 5. Sandboxed App Caches
+echo "--- Sandboxed App Caches ---"
+SANDBOX_DIR="$HOME_DIR/Library/Containers"
+if [ -d "$SANDBOX_DIR" ]; then
+  SANDBOX_TOTAL=0
+  for cache_dir in "$SANDBOX_DIR"/*/Data/Library/Caches; do
+    [ -d "$cache_dir" ] || continue
+    size=$(safe_size "$cache_dir")
+    [ "$size" -gt 100 ] && safe_trash_contents "$cache_dir"
+    SANDBOX_TOTAL=$((SANDBOX_TOTAL + size))
+  done
+  echo "  Sandboxed caches scanned: $(format_size $SANDBOX_TOTAL)"
+else
+  echo "  No sandboxed containers found."
+fi
+echo ""
+
+# 6. App-Specific Caches (non-browser apps)
+echo "--- App-Specific Caches ---"
+for app_cache in \
+  "$HOME_DIR/Library/Application Support/discord/Cache" \
+  "$HOME_DIR/Library/Application Support/discord/Code Cache" \
+  "$HOME_DIR/Library/Application Support/zoom.us/data/zoomcache" \
+  "$HOME_DIR/Library/Application Support/Code/Cache" \
+  "$HOME_DIR/Library/Application Support/Code/CachedData" \
+  "$HOME_DIR/Library/Application Support/Code/logs" \
+  "$HOME_DIR/Library/Application Support/Slack/Cache" \
+  "$HOME_DIR/Library/Application Support/Slack/Code Cache"; do
+  [ -d "$app_cache" ] && safe_trash "$app_cache"
+done
+echo ""
+
+# 7. Application Support Logs & Caches
+echo "--- Application Support Logs & Caches ---"
+AS_DIR="$HOME_DIR/Library/Application Support"
+AS_TOTAL=0
+if [ -d "$AS_DIR" ]; then
+  for app_dir in "$AS_DIR"/*/; do
+    [ -d "$app_dir" ] || continue
+    app_name=$(basename "$app_dir")
+    # Skip Apple system dirs and known important dirs
+    [[ "$app_name" == com.apple.* ]] && continue
+    [[ "$app_name" == Apple ]] && continue
+    [[ "$app_name" == Knowledge ]] && continue
+    [[ "$app_name" == MobileSync ]] && continue
+    [[ "$app_name" == Claude ]] && continue
+    [[ "$app_name" == obsidian ]] && continue
+    for sub in "Cache" "Caches" "logs" "Logs" "CachedData" "GPUCache"; do
+      subdir="$app_dir$sub"
+      if [ -d "$subdir" ]; then
+        size=$(safe_size "$subdir")
+        if [ "$size" -gt 1024 ]; then
+          safe_trash_contents "$subdir"
+          AS_TOTAL=$((AS_TOTAL + size))
+        fi
+      fi
+    done
+  done
+  echo "  Application Support caches/logs cleared: $(format_size $AS_TOTAL)"
+fi
+echo ""
+
+# 9. iOS Device Backups (report only)
 echo "--- iOS Device Backups ---"
 BACKUP_DIR="$HOME_DIR/Library/Application Support/MobileSync/Backup"
 if [ -d "$BACKUP_DIR" ]; then
@@ -150,7 +220,7 @@ else
 fi
 echo ""
 
-# 6. System Temp Files
+# 10. System Temp Files
 echo "--- System Temp Files ---"
 TEMP_COUNT=0
 for pattern in "$HOME_DIR/Downloads"/*.tmp "$HOME_DIR/Downloads"/*.crdownload; do
@@ -162,7 +232,7 @@ done
 echo "  Removed $TEMP_COUNT temp/partial download files."
 echo ""
 
-# 7. Old Logs (older than 30 days)
+# 11. Old Logs (older than 30 days)
 echo "--- Old Logs ---"
 LOG_DIR="$HOME_DIR/Library/Logs"
 if [ -d "$LOG_DIR" ]; then
@@ -175,7 +245,7 @@ if [ -d "$LOG_DIR" ]; then
 fi
 echo ""
 
-# 8. Time Machine Local Snapshots (report only)
+# 12. Time Machine Local Snapshots (report only)
 echo "--- Time Machine Snapshots ---"
 SNAPSHOTS=$(tmutil listlocalsnapshots / 2>/dev/null || true)
 if [ -n "$SNAPSHOTS" ]; then
