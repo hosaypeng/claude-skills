@@ -9,7 +9,8 @@ source "$(dirname "$0")/_helpers.sh"
 
 HOME_DIR="$HOME"
 LOG_FILE="$HOME_DIR/.claude/purge-artifacts-log.txt"
-INSTALLED_IDS="/tmp/installed_bundle_ids_$$.txt"
+INSTALLED_IDS=$(mktemp)
+trap 'rm -f "$INSTALLED_IDS"' EXIT
 
 echo "=== Forensic Trace Cleanup ==="
 echo ""
@@ -34,6 +35,7 @@ if [ -f "$QE_DB" ]; then
   QE_COUNT=$(sqlite3 "$QE_DB" "SELECT COUNT(*) FROM LSQuarantineEvent" 2>/dev/null || echo 0)
   echo "Quarantine Events: $QE_COUNT entries"
   if [ "$QE_COUNT" -gt 0 ]; then
+    cp "$QE_DB" "$QE_DB.bak.$(date +%s)" 2>/dev/null
     sqlite3 "$QE_DB" "DELETE FROM LSQuarantineEvent" 2>/dev/null && echo "  Cleared." || echo "  Could not clear (may need manual deletion)." >&2
   fi
 else
@@ -97,7 +99,7 @@ if [ -d "$SAS_DIR" ]; then
     [ -d "$state_dir" ] || continue
     bundle_id=$(basename "$state_dir")
     [[ "$bundle_id" == com.apple.* ]] && continue
-    if ! grep -q "^${bundle_id}$" "$INSTALLED_IDS" 2>/dev/null; then
+    if ! grep -Fxq "$bundle_id" "$INSTALLED_IDS" 2>/dev/null; then
       safe_trash "$state_dir"
       ORPHAN_COUNT=$((ORPHAN_COUNT + 1))
     fi
@@ -116,7 +118,7 @@ if [ -d "$CONT_DIR" ]; then
     bundle_id=$(basename "$container")
     [[ "$bundle_id" == com.apple.* ]] && continue
     [[ "$bundle_id" =~ ^[A-F0-9]{8}- ]] && continue
-    if ! grep -q "^${bundle_id}$" "$INSTALLED_IDS" 2>/dev/null; then
+    if ! grep -Fxq "$bundle_id" "$INSTALLED_IDS" 2>/dev/null; then
       ORPHAN_COUNT=$((ORPHAN_COUNT + 1))
     fi
   done
@@ -167,7 +169,7 @@ if [ -d "$HS_DIR" ]; then
     [ -d "$storage" ] || continue
     bundle_id=$(basename "$storage")
     [[ "$bundle_id" == com.apple.* ]] && continue
-    if ! grep -q "^${bundle_id}$" "$INSTALLED_IDS" 2>/dev/null; then
+    if ! grep -Fxq "$bundle_id" "$INSTALLED_IDS" 2>/dev/null; then
       safe_trash "$storage"
       ORPHAN_COUNT=$((ORPHAN_COUNT + 1))
     fi
@@ -190,7 +192,7 @@ if [ -d "$AS_DIR" ]; then
     [[ "$dir_name" == Knowledge ]] && continue
     [[ "$dir_name" == CrashReporter ]] && continue
     # Check if it looks like a bundle ID and is orphaned
-    if [[ "$dir_name" == *.*.* ]] && ! grep -q "^${dir_name}$" "$INSTALLED_IDS" 2>/dev/null; then
+    if [[ "$dir_name" == *.*.* ]] && ! grep -Fxq "$dir_name" "$INSTALLED_IDS" 2>/dev/null; then
       size=$(safe_size "$support_dir")
       echo "  Orphaned: $dir_name ($(format_size $size))"
       safe_trash "$support_dir"
@@ -218,7 +220,7 @@ if [ -d "$PREF_DIR" ]; then
     [[ "$plist_name" == loginwindow ]] && continue
     [[ "$plist_name" == ByHost ]] && continue
     # Check if bundle ID matches an installed app
-    if ! grep -q "^${plist_name}$" "$INSTALLED_IDS" 2>/dev/null; then
+    if ! grep -Fxq "$plist_name" "$INSTALLED_IDS" 2>/dev/null; then
       # Only flag it, don't auto-delete plists (some belong to CLI tools, not .app bundles)
       echo "  Possibly orphaned: $plist_name"
       ORPHAN_COUNT=$((ORPHAN_COUNT + 1))
@@ -312,9 +314,6 @@ else
   echo "Siri Suggestions: not found"
 fi
 echo ""
-
-# Cleanup temp file
-rm -f "$INSTALLED_IDS"
 
 # Summary
 FREED_MB=$((TOTAL_FREED / 1024))

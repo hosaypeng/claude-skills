@@ -1,6 +1,7 @@
 ---
 name: extract-biodata
 description: "Extract applicant biodata fields (name, age, height, weight, experience, etc.) from PDF files and auto-populate biodata_summary.md tables. Use when user says 'extract biodata', 'process biodata PDFs', 'update biodata table', or 'scan applicant PDFs'."
+user-invocable: true
 ---
 
 # Instructions
@@ -33,16 +34,17 @@ When I run /extract-biodata:
 7. Calculate age from DOB if both DOB and Age are present (verify they match)
 
 ## Phase 3: Update Table
-8. Find biodata_summary.md in current directory
-9. For each candidate:
+8. If biodata_summary.md does not exist in the current directory, ask the user whether to create a new one or specify the correct path.
+9. Find biodata_summary.md in current directory
+10. For each candidate:
    - If row exists (match by Code or Name): update ONLY empty fields with extracted data
    - If row missing: add new row with all extracted data
    - NEVER overwrite existing data in the table
-10. Preserve existing manually-entered data
-11. Maintain table formatting exactly (alignment, spacing, etc.)
+11. Preserve existing manually-entered data
+12. Maintain table formatting exactly (alignment, spacing, etc.)
 
 ## Phase 4: Report
-12. Generate detailed completion report:
+13. Generate detailed completion report:
 ```
 EXTRACTION REPORT
 =================
@@ -56,10 +58,10 @@ Failed: 0 (0%)
 
 EXTRACTION DETAILS:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✓ AS1397 - Anita Devi: Extracted 12/12 fields
-✓ AS1400 - Imas: Extracted 12/12 fields
-⚠ AS1476 - Sumiati: Extracted 9/12 fields (missing children, height, weight)
-✓ AS1514 - Indri Astuti: Extracted 12/12 fields
+[OK] AS1397 - Anita Devi: Extracted 12/12 fields
+[OK] AS1400 - Imas: Extracted 12/12 fields
+[WARN] AS1476 - Sumiati: Extracted 9/12 fields (missing children, height, weight)
+[OK] AS1514 - Indri Astuti: Extracted 12/12 fields
 [... continue for all candidates]
 
 MISSING DATA SUMMARY:
@@ -80,7 +82,7 @@ Religion:  13/13 (100%) ██████████████████�
 Education: 13/13 (100%) ████████████████████
 ```
 
-13. Show a preview of what will be updated in the table:
+14. Show a preview of what will be updated in the table:
 ```
 PROPOSED UPDATES TO biodata_summary.md:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -99,12 +101,12 @@ Row 2 (AS1400 - Imas):
 [... continue for all rows with updates]
 ```
 
-14. Ask: "Should I update the biodata_summary.md table with this data? (yes/no)"
-15. If confirmed:
+15. Ask: "Should I update the biodata_summary.md table with this data? (yes/no)"
+16. If confirmed:
     - Make the updates
     - Show the updated table
     - Save a backup of the original table to `biodata_summary.md.backup-{timestamp}`
-    - Confirm: "✓ Table updated successfully. Backup saved."
+    - Confirm: "[OK] Table updated successfully. Backup saved."
 
 ## Important Notes:
 - NEVER overwrite existing data in the table (only fill empty cells)
@@ -112,3 +114,9 @@ Row 2 (AS1400 - Imas):
 - Preserve table formatting exactly (markdown table structure)
 - Always create a backup before making changes
 - If confidence in extracted data is low (<80%), flag for manual review
+
+## Troubleshooting
+
+- **PDF is scanned image without OCR text**: Use the Read tool's visual mode to read the PDF as an image. Note in the report that extraction was image-based.
+- **biodata_summary.md not found**: Ask the user for the correct path or offer to create a new one with standard headers.
+- **Applicant code format not recognized**: Flag the PDF for manual review. Extract all other fields normally.

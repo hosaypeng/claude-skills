@@ -1,21 +1,10 @@
 ---
 name: require-approval
 description: "Create structured approval checkpoints for high-stakes or irreversible decisions. Use when an agent needs human sign-off before destructive actions, production deployments, financial operations, data deletion, or security changes."
+user-invocable: true
 ---
 
 # Human Oversight Approval Task
-
-You are executing the `/require-approval` skill to create a structured approval checkpoint.
-
-## Philosophy
-
-The article noted: "Human oversight patterns for high-stakes decisions" were missing.
-
-Autonomous agents need clear checkpoints where human judgment is required:
-- Before irreversible actions
-- For high-stakes decisions
-- When consequences are significant
-- To maintain accountability
 
 ## Objectives
 
@@ -102,21 +91,21 @@ Be transparent about consequences:
 ```markdown
 ## Risk Assessment
 
-### ⚠️  Irreversibility:
+### [WARN] Irreversibility:
 [Can this be undone? If so, how?]
 
-### 💥 Blast Radius:
+### [ALERT] Blast Radius:
 [What could break if this goes wrong?]
 
-### 📊 Impact:
+### [INFO] Impact:
 - Users affected: [number/scope]
 - Systems affected: [list]
 - Downtime risk: [low/medium/high]
 
-### 🔄 Rollback Plan:
+### [ROLLBACK] Rollback Plan:
 [How to undo if needed]
 
-### 🚨 Worst Case:
+### [ALERT] Worst Case:
 [What's the worst that could happen?]
 ```
 
@@ -144,10 +133,10 @@ Present clear options:
 
 Choose one:
 
-1. ✅ APPROVE - Proceed with the action as described
-2. 🔄 MODIFY - I want to change the approach
-3. ⏸️  DEFER - Not now, ask me later
-4. ❌ REJECT - Don't do this
+1. [APPROVE] - Proceed with the action as described
+2. [MODIFY] - I want to change the approach
+3. [DEFER] - Not now, ask me later
+4. [REJECT] - Don't do this
 
 Additional notes/conditions:
 [Space for user input]
@@ -155,7 +144,7 @@ Additional notes/conditions:
 
 ## Approval Document Format
 
-Create approval documents and format user-facing output per `references/approval_template.md`.
+Create approval documents and format user-facing output per `~/.claude/skills/require-approval/references/approval_template.md`.
 
 ## After Approval/Rejection
 
@@ -199,5 +188,10 @@ Create approval documents and format user-facing output per `references/approval
 - Provide honest worst-case scenarios
 - Always offer rollback plan
 - Log all decisions for accountability
+
+## Troubleshooting
+
+- **Approval document save fails**: Create the directory with mkdir -p or output the approval document inline.
+- **User response is ambiguous**: Re-present the options. If conversational (e.g., "yeah go ahead"), interpret as approval and confirm.
 
 Execute approval checkpoint now.

@@ -18,21 +18,23 @@ Bulk-edit habits in `all_habits.md` using `edit_habit.py`.
 
 3. Run a dry-run first to preview:
    ```
-   cd ~/Library/Mobile\ Documents/com~apple~CloudDocs/Documents/Code/hosaypenggithubio && python3 scripts/edit_habit.py --dry-run <command> <args...>
+   bash ~/.claude/skills/edit-habit/scripts/run_edit_habit.sh --dry-run <command> <args...>
    ```
 
 4. Show the user the dry-run output (number of entries affected)
 
-5. If the user confirms, run for real (without `--dry-run`):
+5. If the dry-run reports 0 entries affected, warn the user that no matching entries were found. Suggest checking the habit name for typos.
+
+6. If the user confirms, run for real (without `--dry-run`):
    ```
-   cd ~/Library/Mobile\ Documents/com~apple~CloudDocs/Documents/Code/hosaypenggithubio && python3 scripts/edit_habit.py <command> <args...>
+   bash ~/.claude/skills/edit-habit/scripts/run_edit_habit.sh <command> <args...>
    ```
 
-6. Show the summary of changes
+7. Show the summary of changes
 
-7. Ask the user if they want to run `/update-habits` to push the changes to GitHub Pages
+8. Ask the user if they want to run `/update-habits` to regenerate habits.json and push the updated heatmap to GitHub Pages. Without this step, changes only exist in the Obsidian file and won't appear on the website.
 
-Base directory: /Users/hsp/Library/Mobile Documents/com~apple~CloudDocs/Documents/Code/hosaypenggithubio
+Base directory: ~/Library/Mobile Documents/com~apple~CloudDocs/Documents/Code/hosaypenggithubio
 
 Examples:
 ```

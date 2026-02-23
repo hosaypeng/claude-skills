@@ -35,7 +35,7 @@ Include trigger phrases in the description so Claude knows when to invoke the sk
 ## Naming Conventions
 
 - Name directories in **kebab-case** (`audit-vault`, not `audit_vault`).
-- Name scripts in **kebab-case** (`run-audit.sh`, not `run_audit.sh`).
+- Name scripts in **snake_case** (`run_audit.sh`, not `run-audit.sh`).
 - Match the skill name in frontmatter to the directory name exactly.
 
 ## Adding a New Skill

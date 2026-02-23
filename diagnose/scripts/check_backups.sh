@@ -14,7 +14,7 @@ tmutil status 2>/dev/null | grep -E "Running|BackupPhase" || echo "Not backing u
 # Last backup date
 echo ""
 echo "Last backup date:"
-tmutil latestbackup 2>/dev/null | xargs ls -ld 2>/dev/null | awk '{print $6, $7, $8}' || echo "N/A"
+latest=$(tmutil latestbackup 2>/dev/null) && ls -ld "$latest" 2>/dev/null | awk '{print $6, $7, $8}' || echo "N/A"
 
 # Software updates available
 echo ""

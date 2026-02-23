@@ -1,21 +1,10 @@
 ---
+user-invocable: true
 name: define-task
 description: "Create well-defined autonomous task specifications with outcomes and acceptance criteria. Use when user says 'define a task', 'write a task spec', 'create acceptance criteria', 'scope this work', or needs to structure a task for autonomous agent execution."
 ---
 
 # Autonomous Task Definition
-
-You are executing the `/define-task` skill to help the user create a well-defined autonomous task.
-
-## Philosophy
-
-From "How to Get Out of Your Agent's Way":
-> "Define the desired outcome. Define acceptance criteria. Define constraints. Then stop. Planning and execution belong to the agent."
-
-Over-instruction degrades agent behavior. Avoid:
-- Step-by-step plans
-- Tool-level micromanagement
-- Predefined execution graphs
 
 ## Objectives
 
@@ -118,8 +107,7 @@ Once the task is defined:
 
 ## Constraints for This Skill
 
-- Don't let users slip into procedural thinking
-- Push back gently if they're describing HOW instead of WHAT
+- If the user describes implementation steps instead of outcomes, redirect: ask what the end result should be, not how to get there.
 - Keep the task definition concise
 - Avoid ambiguity in acceptance criteria
 

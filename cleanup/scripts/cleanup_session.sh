@@ -159,7 +159,7 @@ echo ""
 # 9. Stale lock files
 echo "--- Stale Lock Files ---"
 LOCK_COUNT=0
-for lockfile in /tmp/*.lock /tmp/claude-*.tmp; do
+for lockfile in /tmp/claude-*.lock /tmp/claude-*.tmp; do
   if [ -f "$lockfile" ]; then
     safe_trash "$lockfile"
     LOCK_COUNT=$((LOCK_COUNT + 1))

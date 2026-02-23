@@ -1,6 +1,7 @@
 ---
 name: kill-sync
 description: "Kill and cleanly relaunch Sync.app to remove phantom windows from Mission Control. Use when Sync shows up in Mission Control despite being a menu-bar-only app."
+user-invocable: true
 ---
 
 # Kill Sync Skill
@@ -12,7 +13,7 @@ Restart Sync.app to eliminate phantom windows that cause it to appear in Mission
 Run this command:
 
 ```bash
-killall Sync 2>/dev/null && sleep 2 && open -a Sync --background
+bash ~/.claude/skills/kill-sync/scripts/kill_sync.sh
 ```
 
 ## Presentation

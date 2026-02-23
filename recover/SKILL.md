@@ -1,21 +1,11 @@
 ---
 name: recover
 description: "Analyze agent failures and provide recovery strategies with rollback options. Use when user says 'something broke', 'recover from error', 'rollback', 'fix this failure', 'undo what went wrong', or after a failed operation needs diagnosis and recovery."
+user-invocable: true
+argument-hint: "[error description or context]"
 ---
 
 # Error Recovery Task
-
-You are executing the `/recover` skill to analyze failures and provide recovery strategies.
-
-## Philosophy
-
-The article noted: "Error handling and recovery strategies beyond 'tear everything down'" were missing.
-
-Autonomous agents need graceful failure recovery:
-- Understand what went wrong
-- Preserve partial progress
-- Offer recovery options
-- Learn from failures
 
 ## Objectives
 
@@ -123,20 +113,20 @@ With user approval:
 ```
 === Error Recovery Analysis ===
 
-🔴 FAILURE DETECTED
+[ALERT] FAILURE DETECTED
 Operation: [what failed]
 Error: [error message]
 Location: [where it failed]
 Timestamp: [when]
 
-📊 STATE ASSESSMENT
+[INFO] STATE ASSESSMENT
 - Partial progress: [what succeeded]
 - Preserved state: [what's saved]
 - Corruption risk: [low/medium/high]
 
-🔧 RECOVERY OPTIONS
+[OPTIONS] RECOVERY OPTIONS
 
-Option 1: ROLLBACK (Safest) ⭐
+Option 1: ROLLBACK (Safest) [RECOMMENDED]
   └─ Restore from checkpoint-[timestamp]
   └─ Loses: [X minutes of work]
   └─ Risk: Low
@@ -158,10 +148,10 @@ Option 4: MANUAL (If needed)
   └─ User must: [manual steps]
   └─ Because: [why automation can't handle]
 
-💡 RECOMMENDATION
+[RECOMMENDATION]
 [Your suggested approach and why]
 
-🚨 WARNINGS
+[WARN] WARNINGS
 - [Any risks to be aware of]
 - [Data that might be lost]
 
@@ -193,7 +183,7 @@ Create: `scratchpad/recovery/recovery-[timestamp].json`
 
 Report results:
 ```
-✅ RECOVERY COMPLETE
+[OK] RECOVERY COMPLETE
 
 Strategy: [which option was used]
 Result: [success/partial/failed]
@@ -232,5 +222,10 @@ After recovery, optionally:
 - Suggest preventive measures
 - Update error handling for similar cases
 - Recommend process improvements
+
+## Troubleshooting
+
+- **No state snapshots or logs found**: Fall back to git history (git log, git reflog, git stash list) and shell history. Ask the user to describe the failure.
+- **Recovery checkpoint directory not writable**: Write recovery logs to /tmp/ as fallback, or output the plan to the terminal directly.
 
 Execute error recovery analysis now.

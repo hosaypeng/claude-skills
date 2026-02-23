@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-VAULT="/Users/hsp/Library/Mobile Documents/iCloud~md~obsidian/Documents"
+VAULT="$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents"
 
 VALID_TAGS="ai biography books business china coding crypto economics film finance geopolitics health history literature personal philosophy productivity self_improvement tech journal index"
 

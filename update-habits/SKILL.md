@@ -22,4 +22,11 @@ The script handles the full pipeline: parse habits, check for changes, commit, a
 - If the push succeeded, confirm the heatmap has been updated on GitHub Pages.
 - If the script fails (non-zero exit), report the error output to the user.
 
-Base directory: /Users/hsp/Library/Mobile Documents/com~apple~CloudDocs/Documents/Code/hosaypenggithubio
+Base directory: ~/Library/Mobile Documents/com~apple~CloudDocs/Documents/Code/hosaypenggithubio
+
+## Troubleshooting
+
+- **Script fails with "not a git repository"**: Ensure the script runs from within the hosaypenggithubio repo directory.
+- **Push rejected (remote has new commits)**: Run `git pull --rebase` in the repo and retry.
+- **"all_habits.md not found"**: Verify the Obsidian vault path and that the file hasn't been moved.
+- **habits.json output is empty or malformed**: Check all_habits.md for broken markdown table syntax.

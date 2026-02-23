@@ -1,12 +1,12 @@
 #!/bin/bash
 set -e
 
-REPO_DIR="/Users/hsp/Library/Mobile Documents/com~apple~CloudDocs/Documents/Code/hosaypenggithubio"
-HABITS_JSON="_data/habits.json"
+REPO_DIR="$HOME/Library/Mobile Documents/com~apple~CloudDocs/Documents/Code/hosaypenggithubio"
+HABITS_JSON="$REPO_DIR/_data/habits.json"
 
 echo "=== Parsing Habits ==="
 cd "$REPO_DIR"
-python3 scripts/parse_habits.py
+python3 "$REPO_DIR/scripts/parse_habits.py"
 echo "Parser finished successfully."
 
 echo "=== Checking for Changes ==="

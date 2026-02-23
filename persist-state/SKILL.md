@@ -1,24 +1,10 @@
 ---
 name: persist-state
 description: "Save current agent work state to scratchpad for resumable workflows. Use when user says 'save my progress', 'checkpoint this work', 'persist state', 'save for later', or before ending a long-running session that should be resumable."
+user-invocable: true
 ---
 
 # State Persistence Task
-
-You are executing the `/persist-state` skill to save current agent work state.
-
-## Philosophy
-
-From "How to Get Out of Your Agent's Way":
-> "Stateless systems are inefficient. Without persistent state, agents recompute work, lose context, inflate prompts, increase cost."
-
-Each significant task should have a writable workspace for:
-- Intermediate results
-- Logs
-- Partial outputs
-- Planning artifacts
-
-Files are inspectable and deterministic.
 
 ## Objectives
 
@@ -109,7 +95,7 @@ Organize the scratchpad directory as:
 After persisting state, report to user:
 
 ```
-✅ State persisted to scratchpad
+[OK] State persisted to scratchpad
 
 Task: [taskname]
 Timestamp: [when]
@@ -143,14 +129,6 @@ Location: [full path to task directory]
 - Don't persist sensitive data (credentials, keys)
 - Keep logs concise and actionable
 
-## Example Use Cases
-
-- Saving progress on long-running analysis
-- Checkpointing before risky operations
-- Creating resumable multi-step tasks
-- Preserving context for tomorrow
-- Sharing work state with other sessions
-
 ## Troubleshooting
 
 **Error: Disk full when writing state files**
@@ -164,5 +142,3 @@ Fix: Check permissions with `ls -la` on the scratchpad path. Use `chmod` to fix,
 **Error: Scratchpad directory doesn't exist and can't be created**
 Cause: The parent path is invalid or on a read-only filesystem.
 Fix: Verify the intended scratchpad path exists. Create it with `mkdir -p`. If on a read-only volume, output the state snapshot to the terminal so the user can save it manually.
-
-Execute state persistence now.

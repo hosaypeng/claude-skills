@@ -1,21 +1,10 @@
 ---
 name: setup-benchmarks
 description: "Scaffold testing and benchmark infrastructure for a project. Use when user says 'set up tests', 'add benchmarks', 'create test suite', 'initialize CI', or when starting a new project that needs test/benchmark scaffolding."
+user-invocable: true
 ---
 
 # Benchmark-First Setup Task
-
-You are executing the `/setup-benchmarks` skill to establish testing infrastructure early in the project lifecycle.
-
-## Philosophy
-
-From "How to Get Out of Your Agent's Way":
-> "Benchmarks should exist as early as possible. They are how you answer: Is this agent output actually good? Is it better than alternatives?"
-
-Without benchmarks:
-- You optimize based on intuition
-- You mistake novelty for progress
-- You ship something that feels impressive but performs poorly
 
 ## Objectives
 
@@ -95,9 +84,9 @@ project/
 
 ## Constraints
 
-- Keep it simple - don't over-engineer
+- Prefer minimal configuration over comprehensive scaffolding.
 - Tests should be fast to run
-- Examples should be realistic, not trivial
+- Write example tests that exercise real project functions, not just assert(true).
 - Documentation should be concise
 - Follow project conventions if they exist
 

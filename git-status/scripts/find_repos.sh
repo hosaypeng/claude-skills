@@ -2,6 +2,7 @@
 set -e
 
 # Find all git repos under $HOME, excluding noise directories
+echo "=== Git Repo Discovery ==="
 find "$HOME" -name ".git" -maxdepth 8 -type d 2>/dev/null \
   | grep -v "\.local/share" \
   | grep -v "\.gemini" \

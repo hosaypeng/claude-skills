@@ -106,3 +106,9 @@ Use WebFetch when you need:
 - Quick factual lookups
 - General understanding of a topic
 - Multiple pages scanned rapidly
+
+## Troubleshooting
+
+- **Page returns empty content or 403**: The page may require authentication or block automated access. Fall back to `mcp__claude-in-chrome__navigate` + `get_page_text`. If auth is required, inform the user.
+- **Chrome MCP tools unavailable**: Fall back to WebFetch-only mode. Note in the output that full-fidelity extraction was not possible.
+- **Page content exceeds context window**: Use targeted mode to extract specific sections, or process in chunks.

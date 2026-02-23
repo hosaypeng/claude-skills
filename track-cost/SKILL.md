@@ -1,11 +1,10 @@
 ---
 name: track-cost
 description: "Analyze Claude agent resource usage, tool call frequency, and token consumption patterns. Use when user says 'how much did that cost', 'track usage', 'show tool usage', 'cost report', or to review session efficiency and spending."
+user-invocable: true
 ---
 
 # Cost Tracking Analysis Task
-
-You are executing the `/track-cost` skill to analyze autonomous agent resource usage.
 
 ## Objectives
 
@@ -36,7 +35,7 @@ Present a clear report with:
 Session: [Date]
 Period: [Time range]
 
-📊 TOOL USAGE
+[INFO] TOOL USAGE
 - Total calls: [N]
 - Most used: [Tool name] ([N] calls)
 - Tool breakdown:
@@ -46,17 +45,17 @@ Period: [Time range]
   • Task: [N] calls
   [etc.]
 
-💰 ESTIMATED COSTS
+[COST] ESTIMATED COSTS
 - Light operations (Bash, Edit): [N] calls
 - Medium operations (Read, Grep): [N] calls
 - Heavy operations (Task, WebFetch): [N] calls
 
-📈 PATTERNS
+[TREND] PATTERNS
 - Peak usage times: [analysis]
 - Common workflows: [patterns detected]
 - Optimization opportunities: [suggestions]
 
-⚠️  ALERTS
+[WARN] ALERTS
 [Any concerning patterns or budget warnings]
 ```
 

@@ -1,6 +1,7 @@
 ---
 name: health-check
 description: "Check system health across LaunchAgents, git repos, vault backup, and habits pipeline. Only alerts on failures. Use when user says 'health check', 'is everything working', 'check my systems', or 'anything broken'."
+user-invocable: true
 ---
 
 # Health Check
@@ -8,7 +9,7 @@ description: "Check system health across LaunchAgents, git repos, vault backup, 
 Run the health check script:
 
 ```bash
-cd ~/Library/Mobile\ Documents/com~apple~CloudDocs/Documents/Code/peng-ai && source .venv/bin/activate && python3 scripts/health_check.py --dry-run
+bash ~/.claude/skills/health-check/scripts/run_health_check.sh
 ```
 
 ## What it checks
@@ -21,9 +22,15 @@ cd ~/Library/Mobile\ Documents/com~apple~CloudDocs/Documents/Code/peng-ai && sou
 ## Interpreting results
 
 - If all checks pass, report "All systems healthy" to the user
-- If failures are found, present them grouped by category with suggested fixes
+- If failures are found, present them grouped by category. For each failure, include the specific remediation command (e.g., 'Run git push in ~/repo' for unpushed commits, 'Run /update-habits' for stale habits).
 - The `--dry-run` flag prevents Slack alerts — remove it to send a real alert
 
 ## Automated schedule
 
 Runs daily at 07:30 via `com.hosaypeng.pengai-healthcheck` LaunchAgent. Silent on success, posts to `#daily-summary` on failure.
+
+## Troubleshooting
+
+- **Python venv not found**: Recreate with `python3 -m venv .venv && pip install -r requirements.txt` in the peng-ai directory.
+- **Script fails with import errors**: Activate the venv and run `pip install -r requirements.txt`.
+- **LaunchAgent reported as "not loaded"**: Reload with `launchctl load ~/Library/LaunchAgents/<plist-name>`.

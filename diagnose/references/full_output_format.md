@@ -1,18 +1,44 @@
-# Diagnose-Security Output Format
+# Diagnose Full Output Format
 
-## Known Legitimate Developers (Reference)
+Format the output as:
 
-| Software | Expected Authority |
-|----------|-------------------|
-| Adobe products | Adobe Inc. (JQ525L2MZD) |
-| DaVinci Resolve | Blackmagic Design Inc (9ZGFBWLSYP) |
-| Parallels | Parallels International GmbH |
-| Microsoft Office | Microsoft Corporation (UBF8T346G9) |
-| CleanMyMac | MacPaw Inc. |
-| Final Draft | Cast & Crew Production Software, LLC |
-| JetBrains IDEs | JetBrains s.r.o. |
+#### System Overview
+- **Chip:** [Chip model]
+- **Cores:** X cores
+- **Load:** X.XX / Y cores (healthy/warning/critical)
+- **RAM:** X GB / Y GB (Z%)
+- **Swap:** X GB used (healthy/warning/critical)
+- **Uptime:** X days
+- **Disk:** X GB / Y GB (Z% used)
 
-## Security Report Format
+#### Battery Health (if available)
+Present the battery findings table from section 5, including:
+- Actual vs Nominal capacity explanation
+- Cycle count status
+- Cell health assessment
+- Temperature
+- Key finding summary: "Battery shows textbook aging" or "Immediate attention needed"
+
+#### GPU & Graphics
+- **GPU:** Model name
+- **VRAM:** X GB
+- **GPU Usage:** X% (if available)
+- **Displays:** Resolution and count
+- **Top GPU consumers:** Process list
+
+#### Disk Health
+- **SMART Status:** Verified/Failing
+- **SSD Wear:** X% (if available)
+- **Temperature:** X°C
+- **Errors (24h):** N
+- **Health:** Excellent/Good/Warning/Critical
+
+#### Network Quality
+- **Interface:** en0/en1
+- **WiFi Signal:** -XX dBm (Excellent/Good/Fair/Poor)
+- **WiFi Speed:** Current/Max Mbps
+- **Packet Loss:** X packets
+- **Active Connections:** N
 
 #### Security Posture Summary
 **Overall Risk Level:** LOW/MEDIUM/HIGH/CRITICAL
@@ -23,8 +49,6 @@ Quick metrics:
 - Security updates: pass/warning/fail
 - Remote access: Secure / Review / Exposed
 
----
-
 #### Network Security
 | Check | Status | Details |
 |-------|--------|---------|
@@ -34,10 +58,6 @@ Quick metrics:
 | VPN | Active/Inactive | Connection details |
 | Proxy | None/Configured | Details if configured |
 
-**Issues:** List any concerns
-
----
-
 #### Encryption & Protection
 | Check | Status | Risk |
 |-------|--------|------|
@@ -45,10 +65,6 @@ Quick metrics:
 | Firmware Password | Set/Unknown/Not set | HIGH if not set |
 | Screen Lock | Enabled/Disabled | MEDIUM if disabled |
 | Lock Delay | Immediate/X sec | LOW if >5sec |
-
-**Issues:** List any concerns
-
----
 
 #### Authentication & Access
 | Check | Status | Risk |
@@ -61,10 +77,6 @@ Quick metrics:
 | Remote Login | Off/On | Info about ports |
 | Screen Sharing | Off/On | Info about access |
 
-**Issues:** List any concerns
-
----
-
 #### Updates & Patches
 | Check | Status |
 |-------|--------|
@@ -73,10 +85,6 @@ Quick metrics:
 | Auto Check | Enabled/Disabled |
 | Auto Install | Enabled/Disabled |
 | Gatekeeper | Enabled/Disabled |
-
-**Issues:** List critical updates
-
----
 
 #### Suspicious Activity
 | Category | Count | Details |
@@ -88,10 +96,6 @@ Quick metrics:
 | Login Items | N | Names |
 | Kernel Extensions | N non-Apple | Names |
 
-**Threat Assessment:** Analysis
-
----
-
 #### Infostealer Detection
 | Check | Status | Risk |
 |-------|--------|------|
@@ -101,17 +105,6 @@ Quick metrics:
 | Keychain Access | Normal/Anomalies detected | Details |
 | Known Malware Paths | Clean/IOCs found | CRITICAL if found |
 | Suspicious Network | Normal/Exfiltration indicators | IPs/Ports |
-
-**Infostealer Risk:** None detected / Indicators found / Active compromise suspected
-
-**If IOCs Found:**
-1. Disconnect from network immediately
-2. Run full Malwarebytes scan
-3. Change all passwords from a clean device
-4. Check financial accounts for unauthorized access
-5. Consider full system wipe if active compromise confirmed
-
----
 
 #### Application Signature Audit
 **Total Apps Scanned:** N applications
@@ -123,35 +116,13 @@ Quick metrics:
 | Ad-hoc/Development | N | Apps needing review |
 | Unsigned/Invalid | N | **CRITICAL** - List apps |
 
-**High-Risk Category Apps (Piracy Targets):**
-| App | Signature Status | Authority | Risk |
-|-----|-----------------|-----------|------|
-| Adobe Photoshop | Valid/Invalid | Adobe Inc. / Unknown | Details |
-| DaVinci Resolve | Valid/Invalid | Blackmagic / Unknown | Details |
-| Microsoft Office | Valid/Invalid | Microsoft / Unknown | Details |
-| [Other flagged apps] | ... | ... | ... |
-
-**Signature Issues Found:**
-- List any apps with invalid/missing signatures
-- List any apps where Authority doesn't match expected developer
-- List any ad-hoc signed apps that should be Developer ID signed
-
-**Recommendations:**
-- Unsigned apps: Remove or verify source and reinstall from official source
-- Mismatched authority: Verify app was downloaded from official source
-- All clear: App signatures verified
-
----
-
-#### Browser Security (Safari & Chrome)
+#### Browser Security
 | Check | Status |
 |-------|--------|
 | Fraudulent Site Warnings | Enabled/Disabled |
 | Do Not Track | Enabled/Disabled |
 | Extensions | N installed |
 | Privacy Score | Good/Review |
-
----
 
 #### File Integrity
 | Check | Status |
@@ -160,7 +131,33 @@ Quick metrics:
 | Hosts File | Clean/Modified |
 | World-Writable Files | N found |
 
----
+#### Backup & Updates
+- **Time Machine:** Last backup date or "Not configured"
+- **Backup Status:** Running/Idle/Not configured
+- **Software Updates:** N pending
+- **Recommendations:** Backup warnings if needed
+
+#### Thermal & Performance
+- **Thermal Status:** Normal/Warning/Critical
+- **CPU Throttling:** Yes/No
+- **Disk I/O:** Read/Write performance
+
+#### Problems Found
+Table with: Category | Count | Impact | Safety to Kill
+
+#### Top Resource Consumers
+**CPU (Top 10):**
+[Table showing PID, %CPU, Command]
+
+**Memory (Top 10):**
+[Table showing MB used, Command]
+
+**Network (Top 5):**
+[Processes using network]
+
+#### Background Process Summary
+- **User launch agents:** N active
+- **High-impact processes:** [List if any]
 
 #### Security Recommendations
 Priority-ordered, most critical first:
@@ -177,8 +174,6 @@ Priority-ordered, most critical first:
 **LOW (Best practices):**
 4. [List nice-to-have improvements]
 
----
-
 #### Security Score
 
 **Overall: X/100**
@@ -192,4 +187,10 @@ Breakdown:
 - Threat Level: X/10
 - Privacy: X/10
 
-**Summary:** Brief assessment of security posture
+#### Key Findings
+Summarize the most important insights:
+- "System is healthy" or "X issues found requiring attention"
+- Battery: "72.8% capacity, replace when convenient" (if degraded)
+- Performance: "No bottlenecks detected" or "High memory pressure from X"
+- Security: "Well protected" or "Enable firewall and FileVault"
+- Storage: "Can reclaim X GB by clearing caches"

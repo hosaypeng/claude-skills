@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-VAULT="/Users/hsp/Library/Mobile Documents/iCloud~md~obsidian/Documents"
+VAULT="$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents"
 
 echo "=== Frontmatter Compliance Check ==="
 echo ""

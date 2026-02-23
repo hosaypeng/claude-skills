@@ -1,4 +1,5 @@
 ---
+user-invocable: true
 name: audit-vault
 description: "Audit Obsidian vault for broken wikilinks, invalid tags, missing frontmatter, orphan notes, and empty files. Use when user says 'audit vault', 'vault health', 'check my notes', or periodically for hygiene."
 argument-hint: "[full|tags|frontmatter|links|orphans]"
@@ -54,3 +55,9 @@ After running the script(s), present results as a **table grouped by severity**:
 For each issue found, suggest a specific fix (e.g., "Add `source:` field to frontmatter", "Create target note or remove link").
 
 If no issues are found, confirm the vault is healthy.
+
+## Troubleshooting
+
+- **Script fails with "No such file or directory"**: The vault path in the script may not match the actual vault location. Verify the path.
+- **False positives for broken wikilinks**: Links may point to aliases or notes with special characters. Cross-check flagged links in Obsidian.
+- **Permission denied errors**: iCloud Drive may be syncing. Wait a moment and retry.

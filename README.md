@@ -11,10 +11,8 @@ A collection of reusable skills for [Claude Code](https://docs.anthropic.com/en/
 | `audit-vault` | Audit Obsidian vault for broken wikilinks, invalid tags, and missing frontmatter |
 | `cleanup` | Remove Claude session artifacts, system caches, or forensic app traces |
 | `code-review` | Expert code review with senior engineer lens (SOLID, security, tests) |
-| `cost-tips` | Cost optimization strategies and checklist for Claude Code |
 | `define-task` | Create well-defined autonomous task specs with acceptance criteria |
-| `diagnose-all` | Run comprehensive system diagnostics (CPU, memory, disk, network, security) |
-| `diagnose-security` | Run comprehensive security audit (firewall, ports, malware, signatures) |
+| `diagnose` | Run system diagnostics: full, security, hardware, or network mode |
 | `edit-habit` | Add, remove, or rename habits in the Obsidian habit tracker |
 | `explain` | Explain a file, folder, or entire codebase in the terminal |
 | `explain-visual` | Generate an interactive HTML slide deck explaining a codebase |
@@ -45,7 +43,7 @@ skill-name/
 - **`SKILL.md`** defines the skill metadata (name, description, trigger phrases) and orchestration logic.
 - **`scripts/`** contains executable shell scripts called by the skill.
 - **`prompt.md`** holds long-form prompt content separated from orchestration.
-- Standalone `.md` files (e.g., `cost-tips.md`) are simple reference skills without subdirectories.
+- Standalone `.md` files are simple reference skills without subdirectories.
 
 ## Links
 
