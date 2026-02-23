@@ -14,8 +14,7 @@ A collection of reusable skills for [Claude Code](https://docs.anthropic.com/en/
 | `define-task` | Create well-defined autonomous task specs with acceptance criteria |
 | `diagnose` | Run system diagnostics: full, security, hardware, or network mode |
 | `edit-habit` | Add, remove, or rename habits in the Obsidian habit tracker |
-| `explain` | Explain a file, folder, or entire codebase in the terminal |
-| `explain-visual` | Generate an interactive HTML slide deck explaining a codebase |
+| `explain` | Explain a file, folder, or codebase with terminal output and HTML slide deck |
 | `extract-biodata` | Extract applicant biodata fields from PDFs into summary tables |
 | `git-status` | Scan all local git repos for uncommitted changes and unpushed commits |
 | `persist-state` | Save current agent work state for resumable workflows |
@@ -35,15 +34,15 @@ Each skill lives in its own directory under `skills/`:
 ```
 skill-name/
   SKILL.md          # Orchestration file (required) — metadata + instructions
-  prompt.md         # Extended prompt content (optional)
   scripts/          # Shell scripts for heavy lifting (optional)
-    do-something.sh
+    do_something.sh
+  references/       # Verbose templates, format specs, examples (optional)
+    output_format.md
 ```
 
-- **`SKILL.md`** defines the skill metadata (name, description, trigger phrases) and orchestration logic.
-- **`scripts/`** contains executable shell scripts called by the skill.
-- **`prompt.md`** holds long-form prompt content separated from orchestration.
-- Standalone `.md` files are simple reference skills without subdirectories.
+- **`SKILL.md`** defines skill metadata (name, description, trigger phrases) and orchestration logic. Keep under ~800 words.
+- **`scripts/`** contains executable shell scripts (`snake_case.sh`, `#!/bin/bash`, `set -e`). All bash logic goes here, not inline in SKILL.md.
+- **`references/`** holds verbose content (output templates, naming conventions, CSS/JS blocks) that SKILL.md references by path.
 
 ## Links
 
