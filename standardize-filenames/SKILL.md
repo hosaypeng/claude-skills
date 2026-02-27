@@ -97,3 +97,4 @@ Default behavior: current directory, execute immediately.
 - **mv fails with "No such file or directory"**: The file may have been renamed by a prior step. Re-scan the directory and retry.
 - **Filename contains characters that break shell quoting**: Always wrap both source and target paths in double quotes.
 - **Date format ambiguity (DD-MM vs MM-DD)**: Inspect sibling files for a consistent convention. Default to the directory's dominant pattern.
+- **CRITICAL — Content-based renaming (PDFs, documents)**: IF the new filename is derived from file content (e.g., reading a PDF to determine its year) → THEN you MUST verify every single rename by reading the file AFTER renaming and confirming the content matches the new filename. Never assume the rename is correct. A mislabeled financial document can have severe real-world consequences. This is non-negotiable.

@@ -111,9 +111,23 @@ Row 2 (AS1400 - Imas):
 ## Important Notes:
 - NEVER overwrite existing data in the table (only fill empty cells)
 - If extracted data conflicts with existing table data, flag it but don't change it
-- Preserve table formatting exactly (markdown table structure)
 - Always create a backup before making changes
 - If confidence in extracted data is low (<80%), flag for manual review
+
+## Table Formatting Rules (CRITICAL)
+- **All columns MUST be padded so vertical pipes align perfectly across every row.**
+- For each column, find the longest cell value (including header), then pad ALL cells in that column with trailing spaces to match that width.
+- The separator row dashes must also match the column width (e.g., `:-----` padded to column width).
+- Every row must have the exact same total width with pipes at identical positions.
+- After writing or updating a table, visually verify that all `|` characters form straight vertical lines.
+- Example of correct formatting:
+```
+| No. | Code   | Applicant Name | Country | Salary | Age | Height | Weight | Children |
+|:----|:-------|:---------------|:-------:|:------:|:---:|:------:|:------:|:---------|
+| 1   | EP166  | Jonavel        | Phil    | $650   | 25  | 150 cm | 58 kg  | 0        |
+| 2   | EP167  | Farrah Mae     | Phil    | $680   | 28  | 165 cm | 55 kg  | 1 (4)    |
+```
+- This applies to ALL table operations: new tables, adding rows, and updating existing tables. If an existing table has misaligned columns, fix the alignment when updating it.
 
 ## Troubleshooting
 
