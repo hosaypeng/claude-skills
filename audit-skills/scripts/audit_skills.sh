@@ -84,6 +84,59 @@ for skill_dir in "$SKILLS_DIR"/*/; do
 done
 
 echo ""
+echo "=== Safety & Convention Checks ==="
+echo ""
+
+for skill_dir in "$SKILLS_DIR"/*/; do
+  skill_name=$(basename "$skill_dir")
+  skill_md="$skill_dir/SKILL.md"
+  [ -f "$skill_md" ] || continue
+
+  # Check scripts for unsafe mv (missing -n flag)
+  if [ -d "$skill_dir/scripts" ]; then
+    for script in "$skill_dir"/scripts/*.sh; do
+      [ -f "$script" ] || continue
+      script_basename=$(basename "$script")
+      # Find bare mv commands without -n (skip comments, mv -n, mv -f on temp/internal files)
+      unsafe_mv=$(grep -nE '^\s*mv\s' "$script" 2>/dev/null | grep -vE '\s-n\s|\s-n$|#|/tmp/|\.tmp|PLAN_|RESOLVED' || true)
+      if [ -n "$unsafe_mv" ]; then
+        echo "[ISSUE] $skill_name/scripts/$script_basename: Uses bare 'mv' without -n (no-clobber) — use 'mv -n' always"
+        ISSUES_FOUND=$((ISSUES_FOUND + 1))
+      fi
+    done
+  fi
+
+  # Check for rm -rf or find -delete in scripts and SKILL.md (trash mandate)
+  for check_file in "$skill_md" "$skill_dir"/scripts/*.sh; do
+    [ -f "$check_file" ] || continue
+    check_basename=$(basename "$check_file")
+    # Skip comments
+    if grep -qE '^\s*(rm\s+-rf|find\s.*-delete)' "$check_file" 2>/dev/null; then
+      echo "[ISSUE] $skill_name/$check_basename: Uses rm -rf or find -delete — use 'mv to ~/.Trash/' instead"
+      ISSUES_FOUND=$((ISSUES_FOUND + 1))
+    fi
+  done
+
+  # Check for git add . or git add -A in SKILL.md (staging violation)
+  # Skip lines that contain "NEVER" or "never" or "don't" (prohibitions, not usage)
+  if grep -E 'git add (\.|(-A|--all))' "$skill_md" 2>/dev/null | grep -ivqE 'never|don.t|do not|avoid|instead'; then
+    echo "[ISSUE] $skill_name: SKILL.md uses 'git add .' or 'git add -A' — stage files by name instead"
+    ISSUES_FOUND=$((ISSUES_FOUND + 1))
+  fi
+
+  # Check for narrow trigger (description only has slash command, no natural language)
+  desc=$(grep '^description:' "$skill_md" 2>/dev/null | head -1 | sed 's/^description: *//' || true)
+  if [ -n "$desc" ]; then
+    # Flag if description mentions only '/skill-name' with no other trigger phrases
+    has_quotes=$(echo "$desc" | grep -coE "'[^']+'" 2>/dev/null | tail -1 || echo "0")
+    if [ "${has_quotes:-0}" -lt 2 ] && echo "$desc" | grep -qE "^Use when user says '/" 2>/dev/null; then
+      echo "[WARN] $skill_name: Description only triggers on slash command — add natural language phrases"
+      ISSUES_FOUND=$((ISSUES_FOUND + 1))
+    fi
+  fi
+done
+
+echo ""
 echo "=== Cross-Reference Check ==="
 echo ""
 
