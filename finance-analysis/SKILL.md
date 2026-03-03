@@ -13,20 +13,14 @@ Run a deep financial and behavioral analysis using the latest master CSV data an
 ## Phase 1: Ensure Data is Current
 
 1. Run `/personal-finance-update` first to sync all tables.
-2. Read the Obsidian note at:
-   ```
-   /Users/hsp/Library/Mobile Documents/iCloud~md~obsidian/Documents/20_areas/personal/personal_finance.md
-   ```
-3. Read the memory file at:
-   ```
-   ~/.claude/projects/-Users-hsp-Sync-personal-finance-master/memory/MEMORY.md
-   ```
+2. Read `~/.claude/skills/finance-analysis/config.json` to get paths for `obsidian_note` and `memory_file`.
+3. Read the Obsidian note and memory file at the configured paths.
 
 ---
 
 ## Phase 2: Load Raw Data
 
-1. Read all master CSVs from `/Users/hsp/Sync/personal_finance/master/` for years 2020 onward (the reliable range).
+1. Read all master CSVs from the `master_csv_dir` path in config.json for years 2020 onward (the reliable range).
 2. Compute any metrics not already in the Obsidian tables — monthly breakdowns, per-category trends, income source timelines, cash flow by month.
 
 ---

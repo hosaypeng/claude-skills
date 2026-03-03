@@ -22,7 +22,7 @@ Run the full finance pipeline, extract current numbers from master CSVs, diff th
 
 1. Run the finance pipeline:
    ```bash
-   bash /Users/hsp/scripts/run_finance_pipeline.sh --quick
+   bash the `pipeline_script` path from config.json --quick
    ```
 2. Check the exit code:
    - **Exit 0**: Continue silently to Phase 2.
@@ -46,7 +46,7 @@ Run the full finance pipeline, extract current numbers from master CSVs, diff th
 
 1. Run the diff script against the Obsidian note:
    ```bash
-   python3 ~/.claude/skills/personal-finance-update/scripts/finance_diff.py /tmp/finance_extract_output.json "/Users/hsp/Library/Mobile Documents/iCloud~md~obsidian/Documents/20_areas/personal/personal_finance.md"
+   python3 ~/.claude/skills/personal-finance-update/scripts/finance_diff.py /tmp/finance_extract_output.json the `obsidian_note` path from config.json
    ```
 2. Capture the JSON output.
 3. If `cells_changed` is 0: report "All tables up to date -- 0 changes" and skip directly to Phase 6.
@@ -72,7 +72,7 @@ For each table in `tables_changed`:
    ```
 2. Save to a new temp file and run the diff again:
    ```bash
-   python3 ~/.claude/skills/personal-finance-update/scripts/finance_diff.py /tmp/finance_extract_verify.json "/Users/hsp/Library/Mobile Documents/iCloud~md~obsidian/Documents/20_areas/personal/personal_finance.md"
+   python3 ~/.claude/skills/personal-finance-update/scripts/finance_diff.py /tmp/finance_extract_verify.json the `obsidian_note` path from config.json
    ```
 3. If `cells_changed` is 0: good, continue to Phase 6.
 4. If non-zero: warn the user about the discrepancy and flag for manual review, but continue.
@@ -103,7 +103,7 @@ Present a summary to the user:
 
 ## Troubleshooting
 
-- **Pipeline script not found**: Verify `/Users/hsp/scripts/run_finance_pipeline.sh` exists and is executable.
-- **No master CSVs found**: Check `/Users/hsp/Sync/personal_finance/master/` has `*_master.csv` files.
+- **Pipeline script not found**: Verify `the `pipeline_script` path from config.json` exists and is executable.
+- **No master CSVs found**: Check `the `master_csv_dir` path from config.json` has `*_master.csv` files.
 - **Obsidian note not found**: iCloud sync may be delayed -- check the path exists.
 - **Table not found in note**: The diff script couldn't find the expected `###` heading -- check the Obsidian note structure hasn't changed.

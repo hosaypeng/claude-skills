@@ -94,8 +94,6 @@ pip install pymupdf
 ## Workflow Integration
 
 After extracting CSVs, place them in the appropriate source directory
-(e.g., `trust_bank_account_statements/`) and run the finance pipeline:
-```bash
-bash /Users/hsp/scripts/run_finance_pipeline.sh --quick
-```
+(e.g., `trust_bank_account_statements/`) and run the finance pipeline using the
+`pipeline_script` path from `~/.claude/skills/extract-bank-statement/config.json`.
 The pipeline will merge, categorize, and validate them into the master CSVs.
