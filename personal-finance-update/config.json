@@ -1,6 +1,0 @@
-{
-  "pipeline_script": "/Users/hsp/scripts/run_finance_pipeline.sh",
-  "master_dir": "/Users/hsp/Sync/personal_finance/master",
-  "validator": "/Users/hsp/scripts/validate_master.py",
-  "obsidian_note": "/Users/hsp/Library/Mobile Documents/iCloud~md~obsidian/Documents/20_areas/personal/personal_finance.md"
-}
