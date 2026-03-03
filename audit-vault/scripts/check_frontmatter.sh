@@ -56,10 +56,30 @@ note_count=0
 while IFS= read -r -d '' file; do
   basename=$(basename "$file")
   [ "$basename" = "_index.md" ] && continue
-  check_fields "$file" tags
+  check_fields "$file" tags description type status
   note_count=$((note_count + 1))
 done < <(find "$VAULT/30_notes" -name '*.md' -maxdepth 1 -print0 2>/dev/null)
 echo "Checked $note_count files in 30_notes/"
+
+# Check for summary on long notes
+echo ""
+echo "--- 30_notes/ summary check (notes > 200 lines) ---"
+summary_issues=0
+while IFS= read -r -d '' file; do
+  basename=$(basename "$file")
+  [ "$basename" = "_index.md" ] && continue
+  line_count=$(wc -l < "$file" | tr -d ' ')
+  if [ "$line_count" -gt 200 ]; then
+    frontmatter=$(awk 'BEGIN{f=0} /^---$/{f++; if(f==2) exit; next} f==1{print}' "$file")
+    if ! echo "$frontmatter" | grep -qE '^summary:'; then
+      rel_path="${file#"$VAULT"/}"
+      echo "[MISSING] $rel_path: Note has $line_count lines but no summary field"
+      ISSUES=$((ISSUES + 1))
+      summary_issues=$((summary_issues + 1))
+    fi
+  fi
+done < <(find "$VAULT/30_notes" -name '*.md' -maxdepth 1 -print0 2>/dev/null)
+echo "$summary_issues long notes missing summary."
 echo ""
 
 # 00_inbox: tags

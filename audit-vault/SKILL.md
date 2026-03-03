@@ -49,8 +49,8 @@ After running the script(s), present results as a **table grouped by severity**:
 
 **Severity levels:**
 - **Critical** — Broken wikilinks, missing frontmatter entirely, invalid tags
-- **Improvement** — Missing optional frontmatter fields (author, published, etc.), orphan notes
-- **Cosmetic** — Near-empty files, minor metadata gaps
+- **Improvement** — Missing optional frontmatter fields (author, published, etc.), orphan notes, missing `description`, `type`, or `status` in 30_notes/ frontmatter
+- **Cosmetic** — Near-empty files, minor metadata gaps, quoted tags, missing `summary` on long notes
 
 For each issue found, suggest a specific fix (e.g., "Add `source:` field to frontmatter", "Create target note or remove link").
 

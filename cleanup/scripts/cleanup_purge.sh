@@ -58,9 +58,10 @@ echo ""
 # Excluded: build, dist, .output, coverage — too generic, often git-tracked.
 ARTIFACT_NAMES=(
   node_modules .next target .build
-  __pycache__ .pytest_cache .mypy_cache .ruff_cache .tox
+  __pycache__ .pytest_cache .mypy_cache .ruff_cache .tox .eggs
   .venv venv
   .gradle .parcel-cache .turbo .angular .nuxt .svelte-kit .expo
+  Pods .dart_tool
 )
 
 ARTIFACT_COUNT=0
@@ -98,6 +99,26 @@ for scan_dir in "${SCAN_DIRS[@]}"; do
 
   echo ""
 done
+
+# Centralized venvs (report only — can't verify if parent project still exists)
+echo "--- Centralized Virtual Environments ---"
+VENVS_DIR="$HOME_DIR/.venvs"
+if [ -d "$VENVS_DIR" ]; then
+  VENV_COUNT=0
+  while IFS= read -r venv_dir; do
+    [ -z "$venv_dir" ] && continue
+    name=$(basename "$venv_dir")
+    size=$(safe_size "$venv_dir")
+    [ "$size" -lt 1024 ] && continue
+    mod=$(stat -f "%Sm" -t "%Y-%m-%d" "$venv_dir" 2>/dev/null || echo "unknown")
+    echo "  $name: $(format_size $size), last modified $mod (report only)"
+    VENV_COUNT=$((VENV_COUNT + 1))
+  done < <(find "$VENVS_DIR" -maxdepth 1 -mindepth 1 -type d 2>/dev/null)
+  [ "$VENV_COUNT" -eq 0 ] && echo "  No centralized venvs found."
+else
+  echo "  No ~/.venvs directory."
+fi
+echo ""
 
 # Summary
 echo "=== Project Artifact Purge Complete ==="

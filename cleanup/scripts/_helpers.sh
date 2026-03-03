@@ -47,7 +47,7 @@ safe_trash() {
     local basename
     basename=$(basename "$path")
     local dest="$HOME/.Trash/${basename}.$(date +%s%N 2>/dev/null || date +%s)"
-    mv "$path" "$dest" 2>/dev/null && {
+    mv -n "$path" "$dest" 2>/dev/null && {
       echo "  Trashed: $path (${size}K)"
     } || {
       echo "  FAILED to trash: $path (permission denied or locked)" >&2
@@ -72,13 +72,19 @@ safe_trash_contents() {
       bn=$(basename "$item")
       [ "$bn" = "." ] || [ "$bn" = ".." ] && continue
       local dest="$HOME/.Trash/${bn}.$(date +%s%N 2>/dev/null || date +%s)"
-      mv "$item" "$dest" 2>/dev/null && count=$((count + 1)) || true
+      mv -n "$item" "$dest" 2>/dev/null && count=$((count + 1)) || true
     done
     if [ "$count" -gt 0 ]; then
       TOTAL_FREED=$((TOTAL_FREED + size))
       echo "  Trashed $count items from $dir ($((size / 1024))MB)"
     fi
   fi
+}
+
+# Check if an app is running by process name.
+# Returns 0 (true) if running, 1 (false) if not.
+is_app_running() {
+  pgrep -xiq "$1" 2>/dev/null
 }
 
 # Format KB as human-readable.

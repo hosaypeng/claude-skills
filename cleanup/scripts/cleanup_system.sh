@@ -67,12 +67,26 @@ echo "--- Browser Caches ---"
 for browser_cache in \
   "$HOME_DIR/Library/Caches/Google/Chrome" \
   "$HOME_DIR/Library/Caches/com.apple.Safari" \
+  "$HOME_DIR/Library/Caches/BraveSoftware" \
   "$HOME_DIR/Library/Caches/Firefox"; do
   if [ -d "$browser_cache" ]; then
     size=$(safe_size "$browser_cache")
     echo "  $(basename "$(dirname "$browser_cache")")/$(basename "$browser_cache"): $(format_size $size) (report only — clear manually if needed)"
   fi
 done
+# Chrome per-profile caches (Service Worker, GPUCache, GrShaderCache)
+CHROME_DIR="$HOME_DIR/Library/Application Support/Google/Chrome"
+if [ -d "$CHROME_DIR" ]; then
+  CHROME_PROFILE_TOTAL=0
+  while IFS= read -r cache_dir; do
+    [ -z "$cache_dir" ] && continue
+    size=$(safe_size "$cache_dir")
+    CHROME_PROFILE_TOTAL=$((CHROME_PROFILE_TOTAL + size))
+  done < <(find "$CHROME_DIR" -maxdepth 3 -type d \( -name "CacheStorage" -o -name "GPUCache" -o -name "GrShaderCache" -o -name "Code Cache" \) 2>/dev/null)
+  if [ "$CHROME_PROFILE_TOTAL" -gt 0 ]; then
+    echo "  Chrome profile caches (all profiles): $(format_size $CHROME_PROFILE_TOTAL) (report only — clear via Chrome settings)"
+  fi
+fi
 echo ""
 
 # 4. Development Caches
@@ -92,6 +106,10 @@ PIP_CACHE="$HOME_DIR/Library/Caches/pip"
 # npm
 NPM_CACHE="$HOME_DIR/.npm/_cacache"
 [ -d "$NPM_CACHE" ] && safe_trash "$NPM_CACHE"
+
+# npx cached packages
+NPX_CACHE="$HOME_DIR/.npm/_npx"
+[ -d "$NPX_CACHE" ] && safe_trash "$NPX_CACHE"
 
 # Yarn
 for yarn_cache in "$HOME_DIR/.cache/yarn" "$HOME_DIR/.yarn/cache"; do
@@ -118,8 +136,8 @@ MAVEN_CACHE="$HOME_DIR/.m2/repository"
 GRADLE_CACHE="$HOME_DIR/.gradle/caches"
 [ -d "$GRADLE_CACHE" ] && safe_trash "$GRADLE_CACHE"
 
-# CocoaPods
-COCOAPODS_CACHE="$HOME_DIR/.cocoapods"
+# CocoaPods (cache only — repos and config must be preserved)
+COCOAPODS_CACHE="$HOME_DIR/.cocoapods/cache"
 [ -d "$COCOAPODS_CACHE" ] && safe_trash "$COCOAPODS_CACHE"
 
 # Composer
@@ -154,6 +172,58 @@ if [ -d "$CORE_SIM" ]; then
   echo "  CoreSimulator: $(format_size $size) (report only — use 'xcrun simctl delete unavailable' to prune)"
 fi
 
+# Playwright (browser binaries for testing)
+for pw_cache in "$HOME_DIR/Library/Caches/ms-playwright" "$HOME_DIR/Library/Caches/ms-playwright-go"; do
+  [ -d "$pw_cache" ] && safe_trash "$pw_cache"
+done
+
+# Hugging Face (ML model cache)
+HF_CACHE="$HOME_DIR/.cache/huggingface"
+[ -d "$HF_CACHE" ] && safe_trash "$HF_CACHE"
+
+# Gemini CLI browser profile (report only — contains OAuth tokens and auth state)
+GEMINI_BROWSER="$HOME_DIR/.gemini/antigravity-browser-profile"
+if [ -d "$GEMINI_BROWSER" ]; then
+  size=$(safe_size "$GEMINI_BROWSER")
+  echo "  Gemini browser profile: $(format_size $size) (report only — contains auth state, delete manually if needed)"
+fi
+
+# Homebrew old formula versions (safe) and orphaned deps (report only)
+if command -v brew &>/dev/null; then
+  brew cleanup --prune=7 2>/dev/null || true
+  echo "  Homebrew: cleaned old downloads (--prune=7)"
+  # autoremove is report-only — can silently remove packages the user depends on
+  ORPHANS=$(brew autoremove --dry-run 2>&1 | grep -E "^Uninstalling" || true)
+  if [ -n "$ORPHANS" ]; then
+    echo "  Homebrew orphaned deps (report only — run 'brew autoremove' manually):"
+    echo "$ORPHANS" | sed 's/^/    /'
+  fi
+fi
+
+# VS Code extensions (report only)
+VSCODE_EXT="$HOME_DIR/.vscode/extensions"
+if [ -d "$VSCODE_EXT" ]; then
+  size=$(safe_size "$VSCODE_EXT")
+  count=$(find "$VSCODE_EXT" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
+  echo "  VS Code extensions: $count installed, $(format_size $size) (report only — uninstall unused via VS Code)"
+fi
+
+# Cursor extensions (report only)
+CURSOR_EXT="$HOME_DIR/.cursor/extensions"
+if [ -d "$CURSOR_EXT" ]; then
+  size=$(safe_size "$CURSOR_EXT")
+  count=$(find "$CURSOR_EXT" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
+  echo "  Cursor extensions: $count installed, $(format_size $size) (report only — uninstall unused via Cursor)"
+fi
+
+# Python venvs (report only — flag stale ones)
+VENVS_DIR="$HOME_DIR/.venvs"
+if [ -d "$VENVS_DIR" ]; then
+  size=$(safe_size "$VENVS_DIR")
+  count=$(find "$VENVS_DIR" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
+  echo "  Python venvs: $count environments, $(format_size $size) (report only — review for stale projects)"
+fi
+
 # Docker (report only)
 if command -v docker &>/dev/null && docker info &>/dev/null 2>&1; then
   echo "  Docker disk usage:"
@@ -184,18 +254,39 @@ fi
 echo ""
 
 # 6. App-Specific Caches (non-browser apps)
+# Electron apps crash if cache is deleted while running — check first.
 echo "--- App-Specific Caches ---"
-for app_cache in \
-  "$HOME_DIR/Library/Application Support/discord/Cache" \
-  "$HOME_DIR/Library/Application Support/discord/Code Cache" \
-  "$HOME_DIR/Library/Application Support/zoom.us/data/zoomcache" \
-  "$HOME_DIR/Library/Application Support/Code/Cache" \
-  "$HOME_DIR/Library/Application Support/Code/CachedData" \
-  "$HOME_DIR/Library/Application Support/Code/logs" \
-  "$HOME_DIR/Library/Application Support/Slack/Cache" \
-  "$HOME_DIR/Library/Application Support/Slack/Code Cache"; do
-  [ -d "$app_cache" ] && safe_trash "$app_cache"
-done
+if is_app_running "Discord"; then
+  echo "  Discord is running — skipping cache (quit Discord first)"
+else
+  for dc in "$HOME_DIR/Library/Application Support/discord/Cache" \
+            "$HOME_DIR/Library/Application Support/discord/Code Cache"; do
+    [ -d "$dc" ] && safe_trash "$dc"
+  done
+fi
+
+if is_app_running "Electron" || is_app_running "Code"; then
+  echo "  VS Code is running — skipping cache (quit VS Code first)"
+else
+  for vc in "$HOME_DIR/Library/Application Support/Code/Cache" \
+            "$HOME_DIR/Library/Application Support/Code/CachedData" \
+            "$HOME_DIR/Library/Application Support/Code/logs"; do
+    [ -d "$vc" ] && safe_trash "$vc"
+  done
+fi
+
+if is_app_running "Slack"; then
+  echo "  Slack is running — skipping cache (quit Slack first)"
+else
+  for sc in "$HOME_DIR/Library/Application Support/Slack/Cache" \
+            "$HOME_DIR/Library/Application Support/Slack/Code Cache"; do
+    [ -d "$sc" ] && safe_trash "$sc"
+  done
+fi
+
+# Zoom (handles missing cache gracefully)
+ZOOM_CACHE="$HOME_DIR/Library/Application Support/zoom.us/data/zoomcache"
+[ -d "$ZOOM_CACHE" ] && safe_trash "$ZOOM_CACHE"
 echo ""
 
 # 7. Application Support Logs & Caches

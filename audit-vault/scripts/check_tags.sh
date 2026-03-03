@@ -3,7 +3,7 @@ set -e
 
 VAULT="$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents"
 
-VALID_TAGS="ai biography books business china coding crypto economics film finance geopolitics health history literature personal philosophy productivity self_improvement tech journal index"
+VALID_TAGS="ai biography books business china coding crypto economics film finance geopolitics health history literature personal philosophy productivity self_improvement tech trading journal index"
 
 echo "=== Tag Validity Check ==="
 echo ""
@@ -59,6 +59,40 @@ while IFS= read -r -d '' file; do
     fi
   done < "$file"
 done < <(find "$VAULT" -name '*.md' -not -path '*/.*' -print0)
+
+echo ""
+echo "--- Quoted Tag Detection ---"
+QUOTED=0
+while IFS= read -r -d '' file; do
+  in_frontmatter=false
+  in_tags=false
+  while IFS= read -r line; do
+    if [ "$line" = "---" ]; then
+      if [ "$in_frontmatter" = true ]; then break; else in_frontmatter=true; continue; fi
+    fi
+    [ "$in_frontmatter" = true ] || continue
+    if echo "$line" | grep -qE '^tags:'; then in_tags=true; continue; fi
+    if [ "$in_tags" = true ]; then
+      if echo "$line" | grep -qE '^  *- '; then
+        if echo "$line" | grep -qE "^  *- ['\"]"; then
+          rel_path="${file#"$VAULT"/}"
+          tag=$(echo "$line" | sed 's/^  *- *//')
+          echo "[QUOTED] Tag $tag in $rel_path (remove quotes)"
+          QUOTED=$((QUOTED + 1))
+        fi
+      else
+        in_tags=false
+      fi
+    fi
+  done < "$file"
+done < <(find "$VAULT" -name '*.md' -not -path '*/.*' -print0)
+
+if [ "$QUOTED" -eq 0 ]; then
+  echo "No quoted tags found."
+else
+  echo "$QUOTED quoted tag(s) found."
+  ISSUES=$((ISSUES + QUOTED))
+fi
 
 echo ""
 if [ "$ISSUES" -eq 0 ]; then

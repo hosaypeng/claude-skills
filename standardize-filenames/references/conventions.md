@@ -45,6 +45,7 @@ Position date at the start if it represents publication/issue date.
 5. Collapse multiple underscores: `file___name` -> `file_name`
 6. Remove leading/trailing underscores: `_file_` -> `file`
 7. Remove redundant words: `american_cinematographer_january_2024_american_cinematographer` -> `2024-01_american_cinematographer`
+8. Remove leading numeric IDs with no semantic meaning: `638199_a_users_guide.pdf` -> `a_users_guide.pdf`
 
 ## Semantic Structuring
 

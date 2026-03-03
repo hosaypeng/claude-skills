@@ -29,25 +29,20 @@ echo ""
 # === Category A: Execution & Download History ===
 echo "--- Category A: Execution & Download History ---"
 
-# Quarantine Events
+# Quarantine Events (report only — clearing weakens Gatekeeper security)
 QE_DB="$HOME_DIR/Library/Preferences/com.apple.LaunchServices.QuarantineEventsV2"
 if [ -f "$QE_DB" ]; then
   QE_COUNT=$(sqlite3 "$QE_DB" "SELECT COUNT(*) FROM LSQuarantineEvent" 2>/dev/null || echo 0)
-  echo "Quarantine Events: $QE_COUNT entries"
-  if [ "$QE_COUNT" -gt 0 ]; then
-    cp "$QE_DB" "$QE_DB.bak.$(date +%s)" 2>/dev/null
-    sqlite3 "$QE_DB" "DELETE FROM LSQuarantineEvent" 2>/dev/null && echo "  Cleared." || echo "  Could not clear (may need manual deletion)." >&2
-  fi
+  echo "Quarantine Events: $QE_COUNT entries (report only — clearing removes Gatekeeper download history)"
 else
   echo "Quarantine Events: not found"
 fi
 
-# KnowledgeC
+# KnowledgeC (report only — contains Screen Time and parental control data)
 KC_DB="$HOME_DIR/Library/Application Support/Knowledge/knowledgeC.db"
 if [ -f "$KC_DB" ]; then
   KC_SIZE=$(safe_size "$KC_DB")
-  echo "KnowledgeC Database: $(format_size $KC_SIZE)"
-  safe_trash "$KC_DB" 2>/dev/null || echo "  TCC-protected. Delete manually via Finder: ~/Library/Application Support/Knowledge/" >&2
+  echo "KnowledgeC Database: $(format_size $KC_SIZE) (report only — contains Screen Time data)"
 else
   echo "KnowledgeC Database: not found"
 fi
@@ -82,10 +77,9 @@ else
   echo "Spotlight Shortcuts: not found"
 fi
 
-# Launch Services rebuild
-echo "Launch Services: rebuilding database..."
-/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -kill -r -domain local -domain system -domain user 2>/dev/null || true
-echo "  Done."
+# Launch Services (report only — rebuild resets file associations and can disrupt Finder)
+echo "Launch Services: run manually if needed:"
+echo "  /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -kill -r -domain local -domain system -domain user"
 echo ""
 
 # === Category B: Orphaned App Data ===
