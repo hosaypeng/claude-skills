@@ -52,17 +52,20 @@ done
 
 ## Output Schema
 
-Matches the finance pipeline schema (`date, account, description, amount, type, category, balance`):
+Savings account outputs 7 columns matching the finance pipeline schema (`date, account, description, amount, type, category, balance`).
+Credit card outputs 9 columns — the 7 pipeline columns plus 2 supplementary FCY columns:
 
-| Column | Format | Example |
-|--------|--------|---------|
-| date | YYYY-MM-DD | 2025-07-21 |
-| account | "Trust Bank" | Trust Bank |
-| description | as-is from statement | DE LUNA HOTEL KUALA LUMPUR MY |
-| amount | positive float | 39.54 |
-| type | "credit" or "debit" | debit |
-| category | empty (pipeline categorizes) | |
-| balance | empty (not in statement) | |
+| Column       | Format                      | Example                          | Notes                                          |
+| ------------ | --------------------------- | -------------------------------- | ---------------------------------------------- |
+| date         | YYYY-MM-DD                  | 2025-07-21                       |                                                |
+| account      | "Trust Bank"                | Trust Bank                       |                                                |
+| description  | as-is from statement        | DE LUNA HOTEL KUALA LUMPUR MY    |                                                |
+| amount       | positive float              | 39.54                            | always SGD                                     |
+| type         | "credit" or "debit"         | debit                            |                                                |
+| category     | empty (pipeline categorizes)| |                                                |
+| balance      | empty (not in statement)    | |                                                |
+| fcy_amount   | positive float or empty     | 130.00                           | CC only; original foreign currency amount      |
+| fcy_currency | ISO 4217 code or empty      | MYR                              | CC only; pipeline ignores, useful for analysis |
 
 ## Savings Account Rules
 
@@ -81,8 +84,8 @@ Matches the finance pipeline schema (`date, account, description, amount, type, 
 - Section headers skipped: "Cashback credit card", "Link credit card", "Loans, Fees, Charges and Repayments"
 - Year is derived from the "Statement cycle" header on page 1; cross-year cycles (e.g. Dec–Jan) are handled correctly
 - Two PDF layouts supported automatically:
-  - V1 (Feb–Jul 2025): single "Posting date" column
-  - V2 (Aug 2025+): "Transaction date" + "Posting date" columns; posting date is used
+  - V1 (Feb–Aug 2025): single "Posting date" column
+  - V2 (Sep 2025+): "Transaction date" + "Posting date" columns; transaction date is used
 
 ## Dependency
 
