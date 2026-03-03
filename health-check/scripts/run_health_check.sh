@@ -18,4 +18,12 @@ fi
 
 cd "$PENG_AI_DIR"
 source .venv/bin/activate
-python3 scripts/health_check.py --dry-run
+
+# Default to --dry-run (no Slack alerts). Pass --alert to send real alerts.
+if [[ "$1" == "--alert" ]]; then
+  echo "Running health check with LIVE Slack alerts..."
+  python3 scripts/health_check.py
+else
+  echo "Running health check in dry-run mode (no Slack alerts)..."
+  python3 scripts/health_check.py --dry-run
+fi

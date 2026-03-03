@@ -10,6 +10,18 @@ argument-hint: "[full | security | hardware | network] (default: full)"
 
 Run system diagnostics to identify resource bottlenecks, security vulnerabilities, hardware issues, and network problems.
 
+## When to use this vs /health-check
+
+| | `/health-check` | `/diagnose` |
+|-|------------------|-------------|
+| **Purpose** | Quick pass/fail across all systems | Deep analysis of specific subsystems |
+| **Runtime** | < 30 seconds | Minutes (varies by mode) |
+| **Scope** | LaunchAgents, git repos, backups, habits, CLAUDE.md | Hardware, security, network, disk, GPU, threats |
+| **Output** | "All healthy" or grouped failures with remediation | Detailed report with metrics, tables, and risk levels |
+| **Use when** | Daily check, "is everything working?" | Investigating a specific problem, security audit, performance troubleshooting |
+
+Use `/health-check` for a fast daily sweep. Use `/diagnose` when something feels wrong or you need a thorough audit of a specific area.
+
 ## Mode Routing
 
 | Invocation | Mode | What runs |

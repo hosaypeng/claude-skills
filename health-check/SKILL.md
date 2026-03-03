@@ -9,7 +9,11 @@ user-invocable: true
 Run the health check script:
 
 ```bash
+# Dry-run (default) — no Slack alerts
 bash ~/.claude/skills/health-check/scripts/run_health_check.sh
+
+# Live mode — sends real Slack alerts on failure
+bash ~/.claude/skills/health-check/scripts/run_health_check.sh --alert
 ```
 
 ## What it checks
@@ -35,11 +39,17 @@ After the script, manually verify both CLAUDE.md files:
 
 - If all checks pass (script + CLAUDE.md audit), report "All systems healthy" to the user
 - If failures are found, present them grouped by category. For each failure, include the specific remediation command (e.g., 'Run git push in ~/repo' for unpushed commits, 'Run /update-habits' for stale habits, edit CLAUDE.md for stale references).
-- The `--dry-run` flag prevents Slack alerts — remove it to send a real alert
+- By default the script runs with `--dry-run` (no Slack alerts)
+- Pass `--alert` to send real Slack alerts on failure: `bash ~/.claude/skills/health-check/scripts/run_health_check.sh --alert`
 
 ## Automated schedule
 
 Runs daily at 07:30 via `com.hosaypeng.pengai-healthcheck` LaunchAgent. Silent on success, posts to `#daily-summary` on failure.
+
+## See also
+
+- **`/git-status`** — Focused check for unpushed commits and dirty working trees across repos. Health-check includes a simpler version of this; use `/git-status` for detailed repo-by-repo status.
+- **`/audit-skills`** — Validates skill definitions, dead references, and CLAUDE.md consistency. Health-check includes a CLAUDE.md staleness check; use `/audit-skills` for a full skill-level audit.
 
 ## Troubleshooting
 

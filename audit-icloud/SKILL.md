@@ -39,7 +39,7 @@ After running the script, present results as:
 
 For **`full`** mode, also list individual files per container (grouped for large containers like Apple Books).
 
-For **`clean`** mode, after presenting results, ask the user which artifacts to delete. Use `find -delete` for confirmed deletions. Offer to clean up empty directories left behind.
+For **`clean`** mode, after presenting results, ask the user which artifacts to delete. Move confirmed deletions to `~/.Trash/` (e.g., `mv -n artifact ~/.Trash/`) — never use `find -delete` or `rm`. Offer to clean up empty directories left behind (also move to Trash).
 
 ## Important
 

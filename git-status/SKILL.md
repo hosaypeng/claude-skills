@@ -17,6 +17,12 @@ Check the commit and push status of all git repos under `$HOME`.
 bash ~/.claude/skills/git-status/scripts/find_repos.sh
 ```
 
+   If a specific repo path was provided as an argument, pass it through for the single-repo fast path:
+
+```bash
+bash ~/.claude/skills/git-status/scripts/find_repos.sh /path/to/repo
+```
+
    If find_repos.sh fails, fall back to `find ~ -name .git -type d -maxdepth 5` excluding node_modules and .cache.
 
 2. For each repo found, check two things:

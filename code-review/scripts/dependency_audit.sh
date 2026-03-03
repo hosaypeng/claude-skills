@@ -7,8 +7,8 @@ echo "=== npm (package.json / package-lock.json) ==="
 git diff HEAD -- package.json package-lock.json 2>/dev/null || echo "No npm dependency changes"
 
 echo ""
-echo "=== Python (requirements.txt / Pipfile) ==="
-git diff HEAD -- requirements.txt Pipfile* 2>/dev/null || echo "No Python dependency changes"
+echo "=== Python (requirements.txt / Pipfile / pyproject.toml / setup.cfg) ==="
+git diff HEAD -- requirements.txt Pipfile* pyproject.toml poetry.lock setup.cfg 2>/dev/null || echo "No Python dependency changes"
 
 echo ""
 echo "=== Rust (Cargo.toml / Cargo.lock) ==="

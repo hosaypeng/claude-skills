@@ -7,7 +7,7 @@ argument-hint: "[path] (optional - defaults to current directory)"
 
 # Explain
 
-Generate a clear explanation of code structure and purpose, then produce an interactive HTML slide deck. Both outputs are always generated.
+Generate a clear explanation of code structure and purpose. For directory and repo scopes, also produce an interactive HTML slide deck. For single-file explanations, skip the slide deck unless the user explicitly requests it (e.g., "make slides").
 
 ## Determine Scope
 
@@ -128,7 +128,7 @@ After the terminal explanation, generate an interactive self-contained HTML slid
 - Categories: build, run, test, deploy
 - Include the actual command strings in monospace
 
-For single-file explanations, adapt the slides: use slides 1 (title/file info), 2 (structure/exports), 3 (dependencies/integration), and skip the rest if not applicable. Combine or reduce slides to fit the scope.
+For single-file explanations, Phase 2 is skipped by default (terminal explanation is sufficient). If the user explicitly requests slides (e.g., "make slides", "generate a deck"), adapt the slides: use slides 1 (title/file info), 2 (structure/exports), 3 (dependencies/integration), and skip the rest if not applicable. Combine or reduce slides to fit the scope.
 
 ### HTML/CSS/JS Requirements
 

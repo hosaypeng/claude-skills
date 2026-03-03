@@ -53,10 +53,10 @@ Create representative, repeatable benchmarks that enable quality measurement fro
    - Set quality gates
 
 5. **Define Acceptance Criteria**:
-   - Create `TESTING.md` document
-   - Define what "good" looks like
-   - Set coverage thresholds
-   - Document benchmark targets
+   - Add testing guidelines as comments in the test config file (e.g., top of `pytest.ini`, `jest.config.js`, or equivalent)
+   - Define coverage thresholds in the test runner config
+   - Document benchmark targets as comments in the benchmark files themselves
+   - NEVER create `TESTING.md` or other standalone documentation files unless the user explicitly requests one
 
 ## Output Structure
 
@@ -67,17 +67,16 @@ project/
 ├── tests/               # Unit/integration tests
 │   └── test_example.*   # Example test file
 ├── benchmarks/          # Performance benchmarks
-│   └── bench_*.*        # Example benchmark
-├── TESTING.md           # Testing guidelines
+│   └── bench_*.*        # Example benchmark (with targets in header comments)
 ├── .github/workflows/   # CI configuration (if applicable)
-└── [config files]       # pytest.ini, jest.config.js, etc.
+└── [config files]       # pytest.ini, jest.config.js, etc. (with testing guidelines in comments)
 ```
 
 ## Acceptance Criteria
 
 - Tests can be run with a single command
 - Example tests are present and passing
-- Documentation explains how to add new tests
+- Config file comments explain how to add new tests
 - Benchmarks are runnable and documented
 - CI/CD is configured (or instructions provided)
 - Quality standards are clearly defined
@@ -98,7 +97,7 @@ project/
 4. Create test/benchmark structure
 5. Generate example files
 6. Configure CI if appropriate
-7. Create documentation
+7. Add inline documentation as comments in config and benchmark files (never create standalone .md docs)
 8. Run tests to verify setup
 
 ## Troubleshooting

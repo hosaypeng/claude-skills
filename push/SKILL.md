@@ -10,10 +10,11 @@ Commit and push changes to GitHub.
 
 1. Run `git status` to see changes
 2. Run `git diff` to understand what changed
-3. Stage all modified and untracked files shown by git status, excluding .env, credentials, and large binaries. Use specific file paths rather than `git add .`
-4. Create a commit with a concise message focused on "why" not "what"
-5. Push to the remote branch
-6. Verify the push succeeded
+3. **Check current branch**: Run `git branch --show-current`. If on `main` or `master`, STOP and warn the user: "You are on the `[branch]` branch. Pushing directly to this branch is discouraged. Create a feature branch instead?" Only proceed if the user explicitly confirms they want to push to main/master.
+4. Stage each file by name (e.g., `git add src/foo.ts src/bar.ts`). NEVER use `git add .` or `git add -A`. Exclude .env, credentials, and large binaries.
+5. Create a commit with a concise message focused on "why" not "what"
+6. Push to the remote branch
+7. Verify the push succeeded
 
 Include this line in all commits:
 `Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>`
