@@ -1,6 +1,6 @@
 ---
 name: finance-analysis
-description: "Comprehensive financial and psychological analysis of personal finance data. Use when user says '/finance-analysis'."
+description: "Comprehensive financial and psychological analysis of personal finance data. Use when user says '/finance-analysis', 'analyze my finances', 'spending analysis', 'financial review', 'how am I doing financially', or 'budget check'."
 user-invocable: true
 ---
 
@@ -13,6 +13,11 @@ Run a deep financial and behavioral analysis using the latest master CSV data an
 ## Phase 1: Ensure Data is Current
 
 1. Run `/personal-finance-update` first to sync all tables.
+   - **If `/personal-finance-update` fails:** Report the error to the user, then suggest manual steps:
+     1. Verify the master CSV directory exists (check `config.json` for the path)
+     2. Confirm `~/Library/Mobile Documents/com~apple~CloudDocs` is syncing
+     3. Try running `/personal-finance-update` again
+     4. If still failing, proceed with whatever data is already on disk and note the staleness in the report
 2. Read `~/.claude/skills/finance-analysis/config.json` to get paths for `obsidian_note` and `memory_file`.
 3. Read the Obsidian note and memory file at the configured paths.
 
