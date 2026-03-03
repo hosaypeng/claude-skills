@@ -1,3 +1,10 @@
+---
+name: public-repo-audit
+description: "Validate repository is safe for public release. Scans for secrets, personal info, large files, and .gitignore gaps."
+user-invocable: true
+argument-hint: "[path]"
+---
+
 # public-repo-audit
 
 **Validate repository is safe for public release**
