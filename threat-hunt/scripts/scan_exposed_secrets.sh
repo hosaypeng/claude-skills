@@ -9,8 +9,9 @@ for search_dir in "/Users/$USER" "/Users/$USER/Code" "/Users/$USER/Desktop" "/Us
   [ -d "$search_dir" ] || continue
   find "$search_dir" -maxdepth 4 -name ".env*" -type f 2>/dev/null | grep -vE "(node_modules|\.git|\.venv|__pycache__)" | while read -r envfile; do
     perms=$(stat -f "%Lp" "$envfile" 2>/dev/null || echo "???")
-    has_secrets=$(grep -cE '(sk-|sk_live_|AKIA[A-Z0-9]{16}|ghp_|gho_|xox[bpsar]-|Bearer |PRIVATE.KEY|password\s*=|secret\s*=|token\s*=)' "$envfile" 2>/dev/null || echo "0")
-    if [ "$has_secrets" -gt 0 ]; then
+    has_secrets=$(grep -cE '(sk-|sk_live_|AKIA[A-Z0-9]{16}|ghp_|gho_|xox[bpsar]-|Bearer |PRIVATE.KEY|password\s*=|secret\s*=|token\s*=)' "$envfile" 2>/dev/null | tr -d '[:space:]' || echo "0")
+    has_secrets="${has_secrets:-0}"
+    if [ "$has_secrets" -gt 0 ] 2>/dev/null; then
       echo "  $envfile (perms: $perms, secret patterns: $has_secrets)"
       if [ "$perms" != "600" ] && [ "$perms" != "400" ]; then
         echo "    [CRITICAL] World/group-readable file with secrets"
