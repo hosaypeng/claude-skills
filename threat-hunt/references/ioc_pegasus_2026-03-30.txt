@@ -1,0 +1,41 @@
+# Pegasus (NSO Group) IOC List
+# Sources: Amnesty International (2021-07-18), Citizen Lab, Apple Threat Notifications
+# Last Updated: 2025-03-15
+# Format: TYPE|VALUE|DESCRIPTION
+#
+# File Paths
+path|/private/var/db/com.apple.xpc.roleaccountd.staging/com.apple.WebKit.Networking|Pegasus 2022 XPC staging indicator
+path|/private/var/db/com.apple.xpc.roleaccountd.staging/com.apple.Safari.SafeBrowsing.Service|Pegasus Safari XPC indicator
+path|/private/var/tmp/.sysmond|Pegasus temp process file
+path|/private/var/tmp/.com.apple.assistantd|Pegasus assistant disguise
+path|/Library/Preferences/.tmpdata|Pegasus temp data cache
+#
+# Process Names
+process|bh|Pegasus bridge handler process
+process|roleaccountd|Pegasus XPC role impersonation
+process|ABSCarrierBundleUpdater|Pegasus carrier bundle exploit
+process|JarvisPluginMgr|Pegasus plugin manager
+process|fservernetd|Pegasus network service
+process|pcabordd|Pegasus clipboard daemon
+#
+# XPC Services (found in shutdown.log)
+xpc_service|com.apple.WebKit.Networking.xpc|Pegasus WebKit XPC impersonation in shutdown log
+xpc_service|com.apple.Safari.SafeBrowsing.Service.xpc|Pegasus SafeBrowsing impersonation
+xpc_service|com.apple.assistantd.xpc|Pegasus assistantd impersonation
+#
+# Domains (representative V2-V4 infrastructure)
+domain|d9z3sz93x5ueidq3.cloudfront.net|Pegasus V2 CloudFront C2
+domain|php78mp9v5.z13.web.core.windows.net|Pegasus V3 Azure C2
+domain|permalfrede.club|Pegasus V3 C2
+domain|opaborola.info|Pegasus V3 validation
+domain|taaborodede.club|Pegasus V3 C2
+domain|baaborodede.com|Pegasus V4 C2
+domain|img.ilottery.com|Pegasus V4 impersonation
+domain|imgdsg.com|Pegasus V4 CDN impersonation
+domain|drfrede.info|Pegasus V4 C2
+domain|erewhon.info|Pegasus C2 infrastructure
+domain|free247downloads.com|Pegasus install domain
+domain|urlpush.net|Pegasus URL shortener
+domain|revolution-ede.com|Pegasus V4 C2
+domain|paborodede.net|Pegasus V4 C2
+domain|edebeede.com|Pegasus V4 C2

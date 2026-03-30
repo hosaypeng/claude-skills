@@ -1,0 +1,46 @@
+# Known Good Network Ranges
+# Format: CIDR|OWNER
+# Used by scan_network_anomalies.sh to filter out legitimate connections
+# Last Updated: 2025-03-15
+#
+# Apple
+17.0.0.0/8|Apple
+# Google
+8.8.4.0/24|Google DNS
+8.8.8.0/24|Google DNS
+34.0.0.0/8|Google Cloud
+35.190.0.0/16|Google Cloud
+142.250.0.0/15|Google
+172.217.0.0/16|Google
+216.58.0.0/16|Google
+# Cloudflare
+1.0.0.0/24|Cloudflare DNS
+1.1.1.0/24|Cloudflare DNS
+104.16.0.0/12|Cloudflare CDN
+172.64.0.0/13|Cloudflare CDN
+# Akamai
+23.0.0.0/12|Akamai CDN
+104.64.0.0/10|Akamai CDN
+# Amazon/AWS
+3.0.0.0/8|AWS
+13.0.0.0/8|AWS
+15.0.0.0/8|AWS
+52.0.0.0/8|AWS
+54.0.0.0/8|AWS
+# Microsoft/Azure
+13.64.0.0/11|Azure
+20.0.0.0/8|Azure
+40.0.0.0/8|Azure
+52.96.0.0/12|Microsoft 365
+# Fastly
+151.101.0.0/16|Fastly CDN
+# GitHub
+140.82.112.0/20|GitHub
+185.199.108.0/22|GitHub Pages
+# Localhost/Private
+127.0.0.0/8|Localhost
+10.0.0.0/8|Private
+172.16.0.0/12|Private
+192.168.0.0/16|Private
+::1/128|Localhost IPv6
+fe80::/10|Link-local IPv6

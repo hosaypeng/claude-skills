@@ -1,0 +1,40 @@
+# Candiru / DevilsTongue IOC List
+# Sources: Microsoft MSTIC (2021-07-15), Citizen Lab (2021-07), ESET, Google TAG
+# Last Updated: 2025-03-15
+# Format: TYPE|VALUE|DESCRIPTION
+#
+# File Paths
+path|/Library/Application Support/.com.microsoft.teams.helper|DevilsTongue Teams impersonation
+path|/private/var/tmp/.com.apple.spotlight|DevilsTongue Spotlight disguise
+path|/private/var/tmp/.fontconfig|DevilsTongue font cache disguise
+path|/Library/WebServer/.cache|DevilsTongue web cache hiding
+#
+# Process Names
+process|com.microsoft.teams.helper|DevilsTongue Teams helper impersonation
+process|fontconfigctl|DevilsTongue font config exploit
+process|SecurityAgent.bundle|DevilsTongue auth plugin process
+#
+# Domains (from Citizen Lab 750+ impersonation sites - representative sample)
+domain|canberratimes.com.au.d5nxcu.workers.dev|Candiru media impersonation
+domain|aljazeera-news.com|Candiru Al Jazeera impersonation
+domain|amnesty-report.com|Candiru Amnesty impersonation
+domain|bbc-uk-news.com|Candiru BBC impersonation
+domain|cnn-international.com|Candiru CNN impersonation
+domain|globalvoices-news.com|Candiru Global Voices impersonation
+domain|reuters-news.co|Candiru Reuters impersonation
+domain|theguardian-news.com|Candiru Guardian impersonation
+domain|yahoo-news.co|Candiru Yahoo impersonation
+domain|washingtonpost-news.com|Candiru WaPo impersonation
+domain|discrede.com|Candiru C2 infrastructure
+domain|flofrede.com|Candiru C2 infrastructure
+domain|incredemed.com|Candiru C2 infrastructure
+domain|opfrede.com|Candiru C2 infrastructure
+domain|strfrede.com|Candiru C2 infrastructure
+domain|frfrode.com|Candiru C2 infrastructure
+#
+# CVEs exploited by Candiru
+# CVE-2021-31979 - Windows kernel elevation of privilege
+# CVE-2021-33771 - Windows kernel elevation of privilege
+# CVE-2021-21166 - Chrome use-after-free
+# CVE-2021-30554 - Chrome use-after-free
+# CVE-2021-30633 - Chrome use-after-free

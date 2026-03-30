@@ -1,0 +1,53 @@
+# Aggregated C2 Domains — Mercenary Spyware
+# Sources: Citizen Lab, Amnesty International, Microsoft MSTIC, Google TAG, ESET
+# Last Updated: 2025-03-15
+# Format: domain|SOURCE|DESCRIPTION
+#
+# === Pegasus (NSO Group) ===
+d9z3sz93x5ueidq3.cloudfront.net|Pegasus|V2 CloudFront C2
+php78mp9v5.z13.web.core.windows.net|Pegasus|V3 Azure C2
+permalfrede.club|Pegasus|V3 C2
+opaborola.info|Pegasus|V3 validation
+taaborodede.club|Pegasus|V3 C2
+baaborodede.com|Pegasus|V4 C2
+img.ilottery.com|Pegasus|V4 impersonation
+imgdsg.com|Pegasus|V4 CDN impersonation
+drfrede.info|Pegasus|V4 C2
+erewhon.info|Pegasus|C2 infrastructure
+free247downloads.com|Pegasus|Install domain
+urlpush.net|Pegasus|URL shortener
+revolution-ede.com|Pegasus|V4 C2
+paborodede.net|Pegasus|V4 C2
+edebeede.com|Pegasus|V4 C2
+#
+# === Candiru / DevilsTongue ===
+canberratimes.com.au.d5nxcu.workers.dev|Candiru|Media impersonation
+aljazeera-news.com|Candiru|Al Jazeera impersonation
+amnesty-report.com|Candiru|Amnesty impersonation
+bbc-uk-news.com|Candiru|BBC impersonation
+cnn-international.com|Candiru|CNN impersonation
+globalvoices-news.com|Candiru|Global Voices impersonation
+reuters-news.co|Candiru|Reuters impersonation
+theguardian-news.com|Candiru|Guardian impersonation
+yahoo-news.co|Candiru|Yahoo impersonation
+washingtonpost-news.com|Candiru|WaPo impersonation
+discrede.com|Candiru|C2 infrastructure
+flofrede.com|Candiru|C2 infrastructure
+incredemed.com|Candiru|C2 infrastructure
+opfrede.com|Candiru|C2 infrastructure
+strfrede.com|Candiru|C2 infrastructure
+frfrode.com|Candiru|C2 infrastructure
+#
+# === Predator (Cytrox/Intellexa) ===
+weblogin-outlook.com|Predator|Outlook impersonation
+citizenlab-report.com|Predator|Citizen Lab impersonation
+redirservice.net|Predator|Redirect infrastructure
+lfrfrode.com|Predator|C2 infrastructure
+prfrode.com|Predator|C2 infrastructure
+cyfrode.com|Predator|C2 infrastructure
+#
+# === Hermit (RCS Lab) ===
+loginserver-auth.com|Hermit|Auth impersonation
+safechat-app.com|Hermit|Chat app impersonation
+premium-messaging.com|Hermit|SMS impersonation
+rcsservice.net|Hermit|C2 infrastructure
