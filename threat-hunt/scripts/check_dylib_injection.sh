@@ -19,12 +19,12 @@ if [ "$found" -eq 0 ]; then
 fi
 
 echo "=== DYLD Environment in Running Processes ==="
-found=0
-ps -eww -o pid,command 2>/dev/null | grep -i "DYLD_INSERT_LIBRARIES" | grep -v "grep" | while read -r line; do
-  echo "  [CRITICAL] Process with DYLD_INSERT_LIBRARIES: $line"
-  found=1
-done || true
-if [ "$found" -eq 0 ]; then
+dyld_hits=$(ps -eww -o pid,command 2>/dev/null | grep -i "DYLD_INSERT_LIBRARIES" | grep -v "grep" || true)
+if [ -n "$dyld_hits" ]; then
+  echo "$dyld_hits" | while read -r line; do
+    echo "  [CRITICAL] Process with DYLD_INSERT_LIBRARIES: $line"
+  done
+else
   echo "  No processes with DYLD injection detected (good)"
 fi
 

@@ -3,7 +3,7 @@ set -e
 
 # match_ioc_files.sh — Check file system for known IOC paths and hashes
 
-REFS_DIR="/Users/hsp/.claude/skills/threat-hunt/references"
+REFS_DIR="$(cd "$(dirname "$0")/../references" && pwd)"
 
 echo "=== IOC File Path Scan ==="
 

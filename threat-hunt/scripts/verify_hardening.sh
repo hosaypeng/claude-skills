@@ -74,7 +74,7 @@ ask_delay=$(defaults read com.apple.screensaver askForPasswordDelay 2>/dev/null 
 echo "  askForPassword: $ask_pw | askForPasswordDelay: $ask_delay"
 if [ "$ask_pw" = "0" ]; then
   echo "  [HIGH] Screen lock password not required"
-elif [ "$ask_delay" != "unknown" ] && [ "$ask_delay" -gt 5 ] 2>/dev/null; then
+elif [ "$ask_delay" != "unknown" ] && [[ "$ask_delay" =~ ^[0-9]+$ ]] && [ "$ask_delay" -gt 5 ]; then
   echo "  [LOW] Screen lock delay is $ask_delay seconds"
 fi
 

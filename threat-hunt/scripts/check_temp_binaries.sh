@@ -4,15 +4,15 @@ set -e
 # check_temp_binaries.sh — Detect Mach-O binaries in temp directories
 
 echo "=== Mach-O Binaries in /tmp ==="
-found=0
-find /tmp -type f -maxdepth 3 2>/dev/null | while read -r f; do
+macho_hits=$(find /tmp -type f -maxdepth 3 2>/dev/null | while read -r f; do
   if file "$f" 2>/dev/null | grep -q "Mach-O"; then
     sig=$(codesign -v "$f" 2>&1 && echo "SIGNED" || echo "UNSIGNED")
     echo "  [CRITICAL] $f [$sig]"
-    found=1
   fi
-done || true
-if [ "$found" -eq 0 ]; then
+done || true)
+if [ -n "$macho_hits" ]; then
+  echo "$macho_hits"
+else
   echo "  None found (good)"
 fi
 

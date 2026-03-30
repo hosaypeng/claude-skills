@@ -23,6 +23,8 @@ log show --predicate 'subsystem == "com.apple.securityd"' --last 1h --style comp
 
 echo "=== Keychain Access Frequency ==="
 access_count=$(log show --predicate 'subsystem == "com.apple.securityd"' --last 1h --style compact 2>/dev/null | wc -l | tr -d ' ' || echo "0")
+access_count="${access_count:-0}"
+[[ "$access_count" =~ ^[0-9]+$ ]] || access_count=0
 echo "  Keychain access events in last hour: $access_count"
 if [ "$access_count" -gt 100 ]; then
   echo "  [HIGH] Unusually high keychain access frequency"

@@ -3,7 +3,7 @@ set -e
 
 # scan_dns_c2.sh — Check DNS cache against known C2 domains
 
-REFS_DIR="/Users/hsp/.claude/skills/threat-hunt/references"
+REFS_DIR="$(cd "$(dirname "$0")/../references" && pwd)"
 
 echo "=== DNS Cache ==="
 dns_cache=$(dscacheutil -cachedump -entries Host 2>/dev/null || true)
@@ -33,15 +33,15 @@ fi
 # Extract domains and check against DNS cache
 if [ -n "$dns_cache" ]; then
   domains=$(grep -v "^#" "$ioc_file" | cut -d'|' -f1 | grep -v "^$" || true)
-  match_found=0
-  echo "$domains" | while read -r domain; do
+  match_count=0
+  while read -r domain; do
     [ -z "$domain" ] && continue
-    if echo "$dns_cache" | grep -qi "$domain"; then
+    if echo "$dns_cache" | grep -qFi "$domain"; then
       echo "  [CRITICAL] C2 domain found in DNS cache: $domain"
-      match_found=1
+      match_count=$((match_count + 1))
     fi
-  done
-  if [ "$match_found" -eq 0 ]; then
+  done <<< "$domains"
+  if [ "$match_count" -eq 0 ]; then
     echo "  No C2 domains found in DNS cache (good)"
   fi
 else
