@@ -18,14 +18,35 @@ else
   echo "  Login keychain not found at expected path"
 fi
 
-echo "=== Recent Keychain Access (last hour) ==="
-log show --predicate 'subsystem == "com.apple.securityd"' --last 1h --style compact 2>/dev/null | tail -20 | sed 's/^/  /' || echo "  SKIPPED: Could not read security daemon logs"
+echo "=== Recent Keychain Item Access (last hour) ==="
+# Filter to actual keychain item operations, excluding routine TLS trust evaluations
+# which generate thousands of benign entries per hour from iCloud/dataaccessd
+item_access=$(log show --predicate 'subsystem == "com.apple.securityd" AND NOT eventMessage CONTAINS "Trust" AND NOT eventMessage CONTAINS "trust" AND NOT eventMessage CONTAINS "MDSStaticDatabase" AND NOT eventMessage CONTAINS "LegacyAPICounts" AND (eventMessage CONTAINS "item" OR eventMessage CONTAINS "unlock" OR eventMessage CONTAINS "authori" OR eventMessage CONTAINS "ACL" OR eventMessage CONTAINS "keychain")' --last 1h --style compact 2>/dev/null || true)
+
+if [ -n "$item_access" ]; then
+  echo "$item_access" | tail -20 | sed 's/^/  /'
+else
+  echo "  No keychain item access events in last hour"
+fi
 
 echo "=== Keychain Access Frequency ==="
-access_count=$(log show --predicate 'subsystem == "com.apple.securityd"' --last 1h --style compact 2>/dev/null | wc -l | tr -d ' ' || echo "0")
+if [ -n "$item_access" ]; then
+  access_count=$(echo "$item_access" | wc -l | tr -d ' ')
+else
+  access_count=0
+fi
 access_count="${access_count:-0}"
 [[ "$access_count" =~ ^[0-9]+$ ]] || access_count=0
-echo "  Keychain access events in last hour: $access_count"
-if [ "$access_count" -gt 100 ]; then
-  echo "  [HIGH] Unusually high keychain access frequency"
+echo "  Keychain item access events in last hour: $access_count"
+if [ "$access_count" -gt 200 ]; then
+  echo "  [HIGH] Unusually high keychain item access frequency"
+fi
+
+echo "=== Non-Standard Keychain Consumers ==="
+# Check if any unusual processes are accessing keychains
+if [ -n "$item_access" ]; then
+  consumers=$(echo "$item_access" | awk '{print $5}' | sort | uniq -c | sort -rn | head -10 || true)
+  if [ -n "$consumers" ]; then
+    echo "$consumers" | sed 's/^/  /'
+  fi
 fi

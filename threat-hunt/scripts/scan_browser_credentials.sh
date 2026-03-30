@@ -10,7 +10,7 @@ if [ -d "$chrome_dir" ]; then
     mod=$(stat -f "%Sm" -t "%Y-%m-%d %H:%M" "$db" 2>/dev/null || echo "unknown")
     echo "  $db (modified: $mod)"
     # Check if non-Chrome process has it open
-    open_by=$(lsof "$db" 2>/dev/null | grep -v "Google Chrome" | grep -v "COMMAND" || true)
+    open_by=$(lsof "$db" 2>/dev/null | grep -v "COMMAND" | grep -viE "(Google|chrome)" || true)
     if [ -n "$open_by" ]; then
       echo "    [HIGH] Accessed by non-Chrome process:"
       echo "$open_by" | sed 's/^/      /'
