@@ -35,6 +35,10 @@ if [ -d "$CACHE_DIR" ]; then
   while IFS= read -r dir; do
     [ -z "$dir" ] && continue
     cache_name=$(basename "$dir")
+    # Skip Apple system caches (system-managed, frequently locked by running processes)
+    case "$cache_name" in
+      com.apple.*) continue ;;
+    esac
     # Skip browsers (report-only in section 3)
     case "$cache_name" in
       *Google*|*Chrome*|*Safari*|*Firefox*|*Brave*) continue ;;
@@ -232,7 +236,44 @@ if command -v docker &>/dev/null && docker info &>/dev/null 2>&1; then
 fi
 echo ""
 
-# 5. Sandboxed App Caches (Apple apps only — third-party caches can contain auth tokens)
+# 5. Abandoned Dotdirs (report only)
+# Scans ~ for dotdirs from tools no longer in use. Only reports — never auto-deletes.
+echo "--- Abandoned Dotdirs ---"
+# Known active dotdirs that should never be flagged
+ACTIVE_DOTDIRS="
+.cache .claude .config .cups .docker .gemini .local .mcp-auth .npm .ssh
+.venvs .vscode .zsh_sessions .arxiv-mcp-server .Trash .git .gitconfig
+.gitignore_global .zshrc .zprofile .zsh_history .CFUserTextEncoding
+.bash_history .bash_profile .bashrc .profile .hushlogin .lesshst
+.python_history .node_repl_history .wget-hsts
+"
+ABANDONED_TOTAL=0
+ABANDONED_COUNT=0
+while IFS= read -r dotdir; do
+  [ -z "$dotdir" ] && continue
+  dirname=$(basename "$dotdir")
+  # Skip files (only check directories)
+  [ -d "$dotdir" ] || continue
+  # Skip known active dirs
+  if echo "$ACTIVE_DOTDIRS" | grep -qw "$dirname"; then
+    continue
+  fi
+  size=$(safe_size "$dotdir")
+  if [ "$size" -gt 0 ]; then
+    echo "  $dirname: $(format_size $size)"
+    ABANDONED_TOTAL=$((ABANDONED_TOTAL + size))
+    ABANDONED_COUNT=$((ABANDONED_COUNT + 1))
+  fi
+done < <(find "$HOME_DIR" -maxdepth 1 -name ".*" -not -name "." -not -name ".." 2>/dev/null | sort)
+if [ "$ABANDONED_COUNT" -gt 0 ]; then
+  echo "  Total: $ABANDONED_COUNT abandoned dotdir(s), $(format_size $ABANDONED_TOTAL)"
+  echo "  (report only — review and delete manually with: rm -rf ~/.<name>)"
+else
+  echo "  No abandoned dotdirs found."
+fi
+echo ""
+
+# 6. Sandboxed App Caches (Apple apps only — third-party caches can contain auth tokens)
 echo "--- Sandboxed App Caches ---"
 SANDBOX_DIR="$HOME_DIR/Library/Containers"
 if [ -d "$SANDBOX_DIR" ]; then
@@ -253,7 +294,7 @@ else
 fi
 echo ""
 
-# 6. App-Specific Caches (non-browser apps)
+# 7. App-Specific Caches (non-browser apps)
 # Electron apps crash if cache is deleted while running — check first.
 echo "--- App-Specific Caches ---"
 if is_app_running "Discord"; then
@@ -289,7 +330,7 @@ ZOOM_CACHE="$HOME_DIR/Library/Application Support/zoom.us/data/zoomcache"
 [ -d "$ZOOM_CACHE" ] && safe_trash "$ZOOM_CACHE"
 echo ""
 
-# 7. Application Support Logs & Caches
+# 8. Application Support Logs & Caches
 echo "--- Application Support Logs & Caches ---"
 AS_DIR="$HOME_DIR/Library/Application Support"
 AS_TOTAL=0
@@ -319,7 +360,29 @@ if [ -d "$AS_DIR" ]; then
 fi
 echo ""
 
-# 9. iOS Device Backups (report only)
+# 9. Claude debug/telemetry logs
+echo "--- Claude Debug & Telemetry ---"
+CLAUDE_DEBUG="$HOME_DIR/.claude/debug"
+CLAUDE_TELEM="$HOME_DIR/.claude/telemetry"
+for cdir in "$CLAUDE_DEBUG" "$CLAUDE_TELEM"; do
+  if [ -d "$cdir" ]; then
+    size=$(safe_size "$cdir")
+    if [ "$size" -gt 100 ]; then
+      safe_trash_contents "$cdir"
+    fi
+  fi
+done
+# Gemini tmp dir
+GEMINI_TMP="$HOME_DIR/.gemini/tmp"
+if [ -d "$GEMINI_TMP" ]; then
+  size=$(safe_size "$GEMINI_TMP")
+  if [ "$size" -gt 100 ]; then
+    safe_trash_contents "$GEMINI_TMP"
+  fi
+fi
+echo ""
+
+# 10. iOS Device Backups (report only)
 echo "--- iOS Device Backups ---"
 BACKUP_DIR="$HOME_DIR/Library/Application Support/MobileSync/Backup"
 if [ -d "$BACKUP_DIR" ]; then
@@ -331,7 +394,7 @@ else
 fi
 echo ""
 
-# 10. System Temp Files
+# 11. System Temp Files
 echo "--- System Temp Files ---"
 TEMP_COUNT=0
 for pattern in "$HOME_DIR/Downloads"/*.tmp "$HOME_DIR/Downloads"/*.crdownload; do
@@ -343,7 +406,7 @@ done
 echo "  Removed $TEMP_COUNT temp/partial download files."
 echo ""
 
-# 11. Old Logs (older than 30 days)
+# 12. Old Logs (older than 30 days)
 echo "--- Old Logs ---"
 LOG_DIR="$HOME_DIR/Library/Logs"
 if [ -d "$LOG_DIR" ]; then
@@ -356,7 +419,7 @@ if [ -d "$LOG_DIR" ]; then
 fi
 echo ""
 
-# 12. Time Machine Local Snapshots (report only)
+# 13. Time Machine Local Snapshots (report only)
 echo "--- Time Machine Snapshots ---"
 SNAPSHOTS=$(tmutil listlocalsnapshots / 2>/dev/null || true)
 if [ -n "$SNAPSHOTS" ]; then

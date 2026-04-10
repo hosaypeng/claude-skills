@@ -3,10 +3,10 @@ set -e
 
 echo "=== Edit Habit ==="
 
-BASE_DIR="$HOME/Library/Mobile Documents/com~apple~CloudDocs/Documents/Code/hosaypenggithubio"
+BASE_DIR="$HOME/Code/hosaypeng.github.io"
 
 if [ ! -d "$BASE_DIR" ]; then
-  echo "Error: hosaypenggithubio directory not found at $BASE_DIR" >&2
+  echo "Error: hosaypeng.github.io directory not found at $BASE_DIR" >&2
   exit 1
 fi
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-REPO_DIR="$HOME/Library/Mobile Documents/com~apple~CloudDocs/Documents/Code/hosaypenggithubio"
+REPO_DIR="$HOME/Code/hosaypeng.github.io"
 HABITS_JSON="$REPO_DIR/_data/habits.json"
 
 echo "=== Parsing Habits ==="

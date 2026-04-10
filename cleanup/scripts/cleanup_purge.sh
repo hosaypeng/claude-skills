@@ -31,7 +31,7 @@ fi
 # Defaults if no config or all paths invalid
 if [ ${#SCAN_DIRS[@]} -eq 0 ]; then
   for d in \
-    "$HOME_DIR/Library/Mobile Documents/com~apple~CloudDocs/Documents/Code" \
+    "$HOME_DIR/Code" \
     "$HOME_DIR/Projects" \
     "$HOME_DIR/Code" \
     "$HOME_DIR/dev" \

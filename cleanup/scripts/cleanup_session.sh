@@ -86,21 +86,30 @@ else
 fi
 echo ""
 
-# 5. Stale project caches (projects that no longer exist on disk)
+# 5. Stale project caches (dead paths or inactive >30 days)
 echo "--- Stale Project Caches ---"
 PROJECTS_DIR="$HOME_DIR/.claude/projects"
 if [ -d "$PROJECTS_DIR" ]; then
   STALE_COUNT=0
-  # Each subdir maps to a filesystem path (encoded)
+  DEAD_PATH_COUNT=0
   for proj_dir in "$PROJECTS_DIR"/*/; do
     [ -d "$proj_dir" ] || continue
-    # The directory name encodes the original path
     dir_name=$(basename "$proj_dir")
-    # Decode: replace hyphens-at-start with /, internal hyphens may be path separators
-    # Check if a CLAUDE.md exists inside — if the project cache has no recent activity, flag it
+
+    # Decode the directory name back to a filesystem path
+    # Format: -Users-hsp-Code-foo -> /Users/hsp/Code/foo
+    decoded_path=$(echo "$dir_name" | sed 's/^-/\//' | sed 's/-/\//g')
+
+    # If the decoded path no longer exists on disk, remove immediately
+    if [ ! -d "$decoded_path" ]; then
+      safe_trash "$proj_dir"
+      DEAD_PATH_COUNT=$((DEAD_PATH_COUNT + 1))
+      continue
+    fi
+
+    # For existing paths, remove if inactive >30 days
     LATEST_FILE=$(find "$proj_dir" -type f -exec stat -f '%m' {} \; 2>/dev/null | sort -rn | head -1)
     if [ -n "$LATEST_FILE" ]; then
-      # Check if newest file is older than 30 days
       THIRTY_DAYS_AGO=$(date -v-30d +%s 2>/dev/null || date -d "30 days ago" +%s 2>/dev/null || echo 0)
       if [ "$LATEST_FILE" -lt "$THIRTY_DAYS_AGO" ] 2>/dev/null; then
         safe_trash "$proj_dir"
@@ -108,7 +117,8 @@ if [ -d "$PROJECTS_DIR" ]; then
       fi
     fi
   done
-  echo "  Removed $STALE_COUNT stale project caches (>30 days inactive)."
+  echo "  Removed $DEAD_PATH_COUNT project caches (dead paths)."
+  echo "  Removed $STALE_COUNT project caches (>30 days inactive)."
 else
   echo "  No projects directory found."
 fi

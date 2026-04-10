@@ -1,6 +1,7 @@
 ---
 name: personal-finance-update
 description: "Run the finance pipeline, extract numbers from master CSVs, diff against Obsidian note, and update stale tables. Use when user says '/personal-finance-update'."
+allowed-tools: Bash, Read, Edit
 user-invocable: true
 ---
 
@@ -37,8 +38,9 @@ Run the full finance pipeline, extract current numbers from master CSVs, diff th
    ```bash
    python3 ~/.claude/skills/personal-finance-update/scripts/finance_extract.py
    ```
-2. Capture the JSON output from stdout.
-3. Save the JSON to a temp file (e.g., `/tmp/finance_extract_output.json`) for use in the next phase.
+2. Check the exit code:
+   - **Exit 0**: Capture the JSON output from stdout. Save it to `/tmp/finance_extract_output.json`.
+   - **Non-zero**: **STOP.** Report the stderr output to the user and do not proceed.
 
 ---
 
@@ -48,7 +50,7 @@ Run the full finance pipeline, extract current numbers from master CSVs, diff th
    ```bash
    python3 ~/.claude/skills/personal-finance-update/scripts/finance_diff.py /tmp/finance_extract_output.json the `obsidian_note` path from config.json
    ```
-2. Capture the JSON output.
+2. Capture the JSON output. Also check stderr — if any `Warning: section '...' not found` messages appear, note the missing sections and report them in Phase 7.
 3. If `cells_changed` is 0: report "All tables up to date -- 0 changes" and skip directly to Phase 6.
 
 ---
@@ -81,7 +83,7 @@ For each table in `tables_changed`:
 
 ## Phase 6: Audit
 
-From the extract JSON and pipeline output, flag:
+From the extract JSON's `validation` array, flag:
 
 1. **Uncategorized transactions** from validation notes.
 2. **Large transactions** over $5,000 that may need review.
@@ -103,7 +105,7 @@ Present a summary to the user:
 
 ## Troubleshooting
 
-- **Pipeline script not found**: Verify `the `pipeline_script` path from config.json` exists and is executable.
-- **No master CSVs found**: Check `the `master_csv_dir` path from config.json` has `*_master.csv` files.
+- **Pipeline script not found**: Verify the `pipeline_script` path from config.json exists and is executable.
+- **No master CSVs found**: Check the `master_dir` path from config.json has `*_master.csv` files.
 - **Obsidian note not found**: iCloud sync may be delayed -- check the path exists.
 - **Table not found in note**: The diff script couldn't find the expected `###` heading -- check the Obsidian note structure hasn't changed.

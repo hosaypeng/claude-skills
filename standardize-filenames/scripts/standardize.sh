@@ -61,6 +61,19 @@ transform_stem() {
   # Lowercase
   stem=$(echo "$stem" | tr '[:upper:]' '[:lower:]')
 
+  # --- Noise removal (watermarks, website tags) ---
+  # Remove known noise patterns before any other processing
+  stem=$(echo "$stem" | sed -E 's/[_[:space:]]*oceanofpdf\.com[_[:space:]]*//gI')
+  stem=$(echo "$stem" | sed -E 's/[_[:space:]]*z-?lib\.org[_[:space:]]*//gI')
+  stem=$(echo "$stem" | sed -E 's/[_[:space:]]*libgen[_[:space:]]*//gI')
+
+  # --- Semantic character mapping (before special char removal) ---
+  # Map & to "and" (preserves semantic meaning)
+  stem=$(echo "$stem" | sed 's/[[:space:]]*&[[:space:]]*/_and_/g')
+
+  # --- Strip time components (e.g., "at 14.24.27" from WhatsApp) ---
+  stem=$(echo "$stem" | sed -E 's/[_[:space:]]+at[_[:space:]]+[0-9]{1,2}\.[0-9]{2}\.[0-9]{2}//g')
+
   # Protect date patterns by replacing hyphens/separators with placeholder XDSX
   # (alphabetic-only placeholder survives special character removal step)
   # YYYY-MM-DD
@@ -68,8 +81,9 @@ transform_stem() {
   # YYYY-MM (only when followed by non-digit or end)
   stem=$(echo "$stem" | sed -E 's/([0-9]{4})-([0-9]{2})(([^0-9])|$)/\1XDSX\2\3/g')
 
-  # Normalize YYYYMMDD -> YYYYXDSXMMXDSXDD
-  stem=$(echo "$stem" | sed -E 's/([0-9]{4})([0-9]{2})([0-9]{2})/\1XDSX\2XDSX\3/g')
+  # Normalize YYYYMMDD -> YYYYXDSXMMXDSXDD (only for valid date ranges)
+  # Month: 01-12, Day: 01-31
+  stem=$(echo "$stem" | sed -E 's/([12][0-9]{3})(0[1-9]|1[0-2])(0[1-9]|[12][0-9]|3[01])/\1XDSX\2XDSX\3/g')
 
   # Normalize YYYY_MM_DD -> YYYYXDSXMMXDSXDD
   stem=$(echo "$stem" | sed -E 's/([0-9]{4})_([0-9]{2})_([0-9]{2})/\1XDSX\2XDSX\3/g')
@@ -80,11 +94,19 @@ transform_stem() {
   # Replace hyphens with underscores (dates already protected)
   stem=$(echo "$stem" | tr '-' '_')
 
+  # Replace Unicode dashes (em-dash, en-dash) with underscores
+  stem=$(echo "$stem" | sed 's/[–—]/_/g')
+
+  # --- Handle dots ---
+  # Replace dots with underscores (version numbers like 1.0.95 become 1_0_95)
+  # Dots have no standard meaning in filenames outside extensions (already split off)
+  stem=$(echo "$stem" | tr '.' '_')
+
   # Remove special characters one class at a time (BSD sed compatible)
   stem=$(echo "$stem" | sed 's/[()]/_/g')
   stem=$(echo "$stem" | sed 's/\[/_/g; s/\]/_/g')
   stem=$(echo "$stem" | sed 's/[{}]/_/g')
-  stem=$(echo "$stem" | sed "s/[!@#\$%^&*+=;:'\",<>?]/_/g")
+  stem=$(echo "$stem" | sed "s/[!@#\$%^*+=;:'\",<>?]/_/g")
   stem=$(echo "$stem" | sed 's/[/\\|]/_/g')
 
   # Restore date hyphens from placeholder
@@ -95,6 +117,20 @@ transform_stem() {
 
   # Remove leading/trailing underscores
   stem=$(echo "$stem" | sed -E 's/^_+//; s/_+$//')
+
+  # Strip leading meaningless numeric IDs (5+ digit sequences not preceded by content)
+  # Preserves 4-digit years (2024_report stays 2024_report)
+  # Strips libgen-style IDs (638199_a_users_guide -> a_users_guide)
+  stem=$(echo "$stem" | sed -E 's/^[0-9]{5,}_//')
+
+  # Strip any surviving non-ASCII chars (e.g. Unicode punctuation not caught above)
+  stem=$(echo "$stem" | tr -cd 'a-z0-9_\-.')
+
+  # Guard: if stem is empty after transform, skip rename (return original)
+  if [ -z "$stem" ]; then
+    echo "${1%.*}"
+    return
+  fi
 
   echo "$stem"
 }
@@ -109,6 +145,7 @@ ALL_EXISTING=$(mktemp /tmp/std_exist.XXXXXX)
 
 cleanup_temps() {
   rm -f "$PLAN_SRC" "$PLAN_DST" "$PLAN_SRC_NAMES" "$PLAN_DST_NAMES" "$ALL_EXISTING"
+  rm -f /tmp/std_dstr.* /tmp/std_dstnr.*
 }
 trap cleanup_temps EXIT
 
@@ -116,7 +153,7 @@ skipped=0
 planned=0
 
 # Collect all existing filenames for collision detection
-find "$TARGET_DIR" -maxdepth "$MAX_DEPTH" -type f -not -name ".*" | sort > "$ALL_EXISTING"
+find "$TARGET_DIR" -maxdepth "$MAX_DEPTH" -not -path '*/.*' -type f | sort > "$ALL_EXISTING"
 
 while IFS= read -r filepath; do
   [ -z "$filepath" ] && continue
@@ -170,17 +207,10 @@ if [ "$planned" -gt 0 ]; then
     src=$(sed -n "${line_num}p" "$PLAN_SRC")
 
     if [ "$dst" != "$src" ] && [ -e "$dst" ]; then
-      src_inode=$(stat -f '%i' "$src" 2>/dev/null || echo "src_none")
-      dst_inode=$(stat -f '%i' "$dst" 2>/dev/null || echo "dst_none")
-      if [ "$src_inode" = "$dst_inode" ]; then
-        # Case-only rename on case-insensitive FS — needs two-pass
-        needs_two_pass=true
-        break
-      else
-        # True overlap collision — different file exists at target path
-        needs_two_pass=true
-        break
-      fi
+      # Either a case-only rename (same inode on case-insensitive FS) or
+      # a true overlap collision — both require two-pass rename
+      needs_two_pass=true
+      break
     fi
   done < "$PLAN_DST"
 fi
@@ -202,7 +232,7 @@ if [ "$planned" -gt 0 ]; then
 
     # Check for plan-internal duplicates (same target appeared earlier)
     if [ "$line_num" -gt 1 ]; then
-      prior_count=$(head -n "$((line_num - 1))" "$PLAN_DST" | grep -c "^${dst}$" 2>/dev/null || true)
+      prior_count=$(head -n "$((line_num - 1))" "$PLAN_DST" | grep -cxF "$dst" 2>/dev/null || true)
       if [ "$prior_count" -gt 0 ]; then
         needs_dedup=true
       fi
@@ -218,7 +248,7 @@ if [ "$planned" -gt 0 ]; then
     fi
 
     # Also check if this target was already claimed in the resolved list
-    if ! $needs_dedup && grep -q "^${dst}$" "$DST_RESOLVED" 2>/dev/null; then
+    if ! $needs_dedup && grep -qxF "$dst" "$DST_RESOLVED" 2>/dev/null; then
       needs_dedup=true
     fi
 
@@ -236,7 +266,7 @@ if [ "$planned" -gt 0 ]; then
       esac
       counter=2
       candidate="${dir}/${stem}_${counter}${ext}"
-      while [ -e "$candidate" ] || grep -q "^${candidate}$" "$DST_RESOLVED" 2>/dev/null; do
+      while [ -e "$candidate" ] || grep -qxF "$candidate" "$DST_RESOLVED" 2>/dev/null; do
         counter=$((counter + 1))
         candidate="${dir}/${stem}_${counter}${ext}"
       done
@@ -310,7 +340,9 @@ if $needs_two_pass; then
     src_name=$(sed -n "${line_num}p" "$PLAN_SRC_NAMES")
     dst_name=$(sed -n "${line_num}p" "$PLAN_DST_NAMES")
     tmp="${dst}.tmp"
-    if ! mv -n "$src" "$tmp"; then
+    mv -n "$src" "$tmp"
+    # mv -n on macOS silently does nothing when dst exists — verify by checking source is gone
+    if [ -e "$src" ]; then
       echo "FAILED (pass 1): $src_name -> ${dst_name}.tmp" >&2
       failures=$((failures + 1))
     else
@@ -329,7 +361,8 @@ if $needs_two_pass; then
       echo "SKIPPED (pass 2, tmp missing): ${dst_name}.tmp" >&2
       continue
     fi
-    if ! mv -n "$tmp" "$dst"; then
+    mv -n "$tmp" "$dst"
+    if [ -e "$tmp" ]; then
       echo "FAILED (pass 2): ${dst_name}.tmp -> ${dst_name}" >&2
       failures=$((failures + 1))
     else
@@ -345,8 +378,9 @@ else
     dst=$(sed -n "${line_num}p" "$PLAN_DST")
     src_name=$(sed -n "${line_num}p" "$PLAN_SRC_NAMES")
     dst_name=$(sed -n "${line_num}p" "$PLAN_DST_NAMES")
-    if ! mv -n "$src" "$dst"; then
-      echo "FAILED: ${src_name} -> ${dst_name}" >&2
+    mv -n "$src" "$dst"
+    if [ -e "$src" ]; then
+      echo "FAILED: ${src_name} -> ${dst_name} (mv -n refused — collision?)" >&2
       failures=$((failures + 1))
     else
       echo "  ${src_name} -> ${dst_name}"

@@ -3,7 +3,14 @@ set -e
 
 VAULT="$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents"
 
-VALID_TAGS="ai biography books business china coding crypto economics film finance geopolitics health history literature personal philosophy productivity self_improvement tech trading journal index"
+# Derive valid tags from actual index files — never drifts
+VALID_TAGS="journal index"
+for idx in "$VAULT"/40_indexes/*.md; do
+  [ -f "$idx" ] || continue
+  name=$(basename "$idx" .md)
+  [ "$name" = "_index" ] && continue
+  VALID_TAGS="$VALID_TAGS $name"
+done
 
 echo "=== Tag Validity Check ==="
 echo ""

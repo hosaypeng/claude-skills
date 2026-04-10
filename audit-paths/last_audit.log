@@ -1,0 +1,10 @@
+2026-04-10 18:22:46 — 9 dead path(s):
+DEAD | MEMORY.md | ~/.claude/agents/
+DEAD | MEMORY.md | /Users/hsp/scripts/screen_universe.py
+DEAD | MEMORY.md | /Users/hsp/pdf-tools/bin/python3
+DEAD | MEMORY.md | ~/scripts/pdf_to_csv.py
+DEAD | MEMORY.md | ~/scripts/merge_bank_csvs.py
+DEAD | MEMORY.md | ~/pdf-tools/
+DEAD | MEMORY.md | ${HOME}/pdf-tools/bin/python3
+DEAD | MEMORY.md | ~/.claude/agents/
+DEAD | com.hsp.sync-claude-config.plist | /Users/hsp/.claude/hooks

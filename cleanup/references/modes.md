@@ -38,7 +38,7 @@ Removes stale build artifacts from project directories:
 
 Generic names (`build`, `dist`, `.output`, `coverage`) are excluded — too often git-tracked or intentional. Git-tracked directories are always skipped.
 
-Only targets artifacts older than 30 days and larger than 1MB. Scan paths are configured in `~/.claude/cleanup-purge-paths.txt` (one directory per line). Defaults to `~/Library/Mobile Documents/com~apple~CloudDocs/Documents/Code`, `~/Projects`, `~/Code`, `~/dev`, `~/GitHub`, `~/Repos`.
+Only targets artifacts older than 30 days and larger than 1MB. Scan paths are configured in `~/.claude/cleanup-purge-paths.txt` (one directory per line). Defaults to `~/Code`, `~/Projects`, `~/dev`, `~/GitHub`, `~/Repos`.
 
 ## Forensic Mode (`/cleanup forensic`)
 Removes privacy-sensitive traces left by uninstalled apps:
@@ -47,9 +47,11 @@ Removes privacy-sensitive traces left by uninstalled apps:
 - CoreDuet database (interaction patterns)
 - Recent items and Spotlight shortcuts
 - Launch Services database rebuild
-- Orphaned app data (saved state, group containers, HTTPStorages, Application Support)
+- Orphaned app data (saved state, group containers, HTTPStorages, WebKit, Application Support)
 - Orphaned containers (reported — SIP-protected, requires Finder to delete)
-- Orphaned preferences (flagged for review — some belong to CLI tools)
+- Orphaned preferences — auto-deleted, cross-referenced against installed bundle IDs with prefix matching. Known system/framework plists (Segment analytics, LaunchDarkly, loginwindow, etc.) are safeguarded.
+- Orphaned Application Scripts — auto-deleted, strips team ID prefixes (e.g. `UBF8T346G9.com.microsoft.Office` → `com.microsoft.Office`) and `group.` prefixes before matching against installed apps
+- Orphaned Caches — auto-deleted, cross-referenced against installed bundle IDs with prefix matching (handles `.ShipIt` suffixes etc.)
 - Orphaned LaunchAgents (background services referencing missing executables)
 - Login items referencing deleted apps (reported for manual review)
 - Third-party kernel extensions (reported, requires sudo)

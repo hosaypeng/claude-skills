@@ -19,10 +19,13 @@ bash ~/.claude/skills/health-check/scripts/run_health_check.sh --alert
 ## What it checks
 
 - **LaunchAgents**: Are key agents loaded? Any non-zero exit codes?
-- **Git repos**: Any unpushed commits across all 8+ repos?
-- **Backup recency**: Has the obsidian vault been backed up in the last 24h?
-- **Habits pipeline**: Does habits.json exist and have valid structure?
-- **CLAUDE.md staleness**: Verify all paths, skill names, and file references in `~/.claude/CLAUDE.md` and the vault's `CLAUDE.md` still exist. Flag dead paths, references to deleted skills, and stale tag/index lists.
+- **Git repos**: Any unpushed commits across all repos?
+- **Vault**: Is the Obsidian vault accessible?
+- **Habits pipeline**: Does habits.json exist and is it recent?
+- **Path audit**: Any dead paths in CLAUDE.md, MEMORY.md, or LaunchAgent plists?
+- **Recovery repo drift**: Brewfile missing installed formulae/casks? repos.txt missing cloned repos or listing deleted ones?
+- **Large log files**: Any log files over 100MB in home directory? Catches unbounded log growth before it eats disk.
+- **Claude config sync**: Is the sync-claude-config LaunchAgent loaded? Do settings.json, hooks, and commands match the recovery repo?
 
 ## CLAUDE.md audit
 
@@ -32,7 +35,7 @@ After the script, manually verify both CLAUDE.md files:
 2. **Vault `CLAUDE.md`** — For each concrete path referenced (vault dirs, templates, quick references, related repos):
    - Verify the path exists on disk
    - Verify the tag list matches `40_indexes/*.md` (excluding `_index.md`)
-   - Verify template names match `50_system/templates/*.md`
+   - Verify template names match `templates/*.md`
 3. Report any stale references found. Auto-fix non-destructive issues (update counts, fix paths). Ask before removing rules or references.
 
 ## Interpreting results
@@ -53,6 +56,5 @@ Runs daily at 07:30 via `com.hosaypeng.pengai-healthcheck` LaunchAgent. Silent o
 
 ## Troubleshooting
 
-- **Python venv not found**: Recreate with `python3 -m venv .venv && pip install -r requirements.txt` in the peng-ai directory.
-- **Script fails with import errors**: Activate the venv and run `pip install -r requirements.txt`.
+- **`brew leaves` slow**: First run may take a few seconds; subsequent runs are faster.
 - **LaunchAgent reported as "not loaded"**: Reload with `launchctl load ~/Library/LaunchAgents/<plist-name>`.
