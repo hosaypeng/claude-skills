@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+# Probe script: try each check, print what works, never abort on a failed sub-check.
 
 echo "=== Browser Security (Safari & Chrome) ==="
 
@@ -15,3 +15,5 @@ ls ~/Library/Safari/Extensions/ 2>/dev/null | head -10 || echo "None"
 echo "=== Tracking Prevention ==="
 echo -n "Private click measurement: "
 defaults read com.apple.Safari WebKitPreferences.privateClickMeasurementEnabled 2>/dev/null || echo "unknown"
+
+exit 0

@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+# Probe script: try each check, print what works, never abort on a failed sub-check.
 
 echo "=== Battery Health ==="
 
@@ -11,3 +11,5 @@ ioreg -r -c AppleSmartBattery | grep -E "MaxCapacity|CurrentCapacity|CycleCount|
 echo ""
 echo "System profiler battery data:"
 system_profiler SPPowerDataType | grep -E "Condition|Cycle Count|Full Charge|Health" || echo "Power data unavailable" >&2
+
+exit 0

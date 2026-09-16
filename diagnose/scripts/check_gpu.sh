@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+# Probe script: try each check, print what works, never abort on a failed sub-check.
 
 echo "=== GPU & Graphics Performance ==="
 
@@ -16,3 +16,5 @@ ioreg -r -c "IOAccelerator" | grep -E "PerformanceStatistics" -A 20 | grep -E "D
 echo ""
 echo "Top GPU-using processes (>5% CPU):"
 ps aux | awk '{if ($3 > 5.0) print $11, $3}' | head -10 || echo "None"
+
+exit 0

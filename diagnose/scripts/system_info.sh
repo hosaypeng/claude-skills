@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+# Probe script: try each check, print what works, never abort on a failed sub-check.
 
 echo "=== System Info ==="
 
@@ -20,3 +20,5 @@ uptime
 echo ""
 echo "CPU count:"
 sysctl -n hw.ncpu
+
+exit 0

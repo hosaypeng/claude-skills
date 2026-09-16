@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+# Probe script: try each check, print what works, never abort on a failed sub-check.
 
 echo "=== Network Activity ==="
 
@@ -11,3 +11,5 @@ netstat -an | grep ESTABLISHED | wc -l
 echo ""
 echo "Top network-using processes:"
 nettop -P -L 1 -t wifi -t wired 2>/dev/null | head -20 || lsof -i -n -P | awk '{print $1}' | sort | uniq -c | sort -rn | head -10
+
+exit 0

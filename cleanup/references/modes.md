@@ -6,7 +6,7 @@ Removes Claude-specific session artifacts:
 - Debug logs older than 7 days (`~/.claude/debug/`)
 - Claude desktop app cache (`~/Library/Application Support/Claude/Cache/`)
 - Old VM bundles — keeps only the latest (`~/Library/Application Support/Claude/vm_bundles/`)
-- Stale project caches older than 30 days (`~/.claude/projects/`)
+- Stale project caches older than 30 days (`~/.claude/projects/`). Projects holding auto-memory (a non-empty `memory/` subdirectory) are always preserved — memory is written to persist across sessions and has no other copy.
 - Old backup files older than 30 days (`~/.claude/backups/`)
 - Session caches older than 30 days (file-history, image-cache, paste-cache)
 - Orphaned Claude processes (detected but not killed automatically)
@@ -17,7 +17,8 @@ Removes Claude-specific session artifacts:
 Frees disk space by clearing caches:
 - User library caches (preserves files modified in last 7 days; **skips browsers, messaging apps, and daily-use apps**)
 - Browser caches — Chrome, Safari, Firefox (**reported only**, not auto-deleted — clearing degrades daily performance)
-- Development caches: Homebrew, npm, pip, uv, Yarn, pnpm, Go, Cargo, Maven, Gradle, CocoaPods, Composer, Ruby Bundler, Xcode DerivedData
+- Development caches, auto-deleted: Homebrew, npm, npx, pip, uv, Yarn, pnpm, Go, CocoaPods, Composer, Ruby Bundler, Xcode DerivedData, Playwright
+- Expensive dev caches, **reported only**: `~/.cache/huggingface` (multi-GB model re-downloads), `~/.cargo/registry`, `~/.gradle/caches`, and `~/.m2/repository` — the Maven repository can hold locally-built artifacts (`mvn install`) that exist nowhere else and cannot be re-downloaded
 - Sandboxed app caches — **Apple apps only** (`com.apple.*`); third-party app caches are skipped (may contain auth/session tokens)
 - App-specific caches (Discord, VS Code, Slack, Zoom cache dir only)
 - Application Support logs and caches (scans all `~/Library/Application Support/*/` subdirs for Cache/Logs/GPUCache; **skips Claude, obsidian, Apple, Knowledge, MobileSync**)
@@ -47,11 +48,22 @@ Removes privacy-sensitive traces left by uninstalled apps:
 - CoreDuet database (interaction patterns)
 - Recent items and Spotlight shortcuts
 - Launch Services database rebuild
-- Orphaned app data (saved state, group containers, HTTPStorages, WebKit, Application Support)
-- Orphaned containers (reported — SIP-protected, requires Finder to delete)
-- Orphaned preferences — auto-deleted, cross-referenced against installed bundle IDs with prefix matching. Known system/framework plists (Segment analytics, LaunchDarkly, loginwindow, etc.) are safeguarded.
-- Orphaned Application Scripts — auto-deleted, strips team ID prefixes (e.g. `UBF8T346G9.com.microsoft.Office` → `com.microsoft.Office`) and `group.` prefixes before matching against installed apps
-- Orphaned Caches — auto-deleted, cross-referenced against installed bundle IDs with prefix matching (handles `.ShipIt` suffixes etc.)
+
+### Category B — orphan detection is REPORT ONLY
+
+Saved state, containers, group containers, HTTPStorages, WebKit data, Application Support, preferences, Application Scripts, and caches are **listed for review and never deleted**.
+
+This category previously auto-deleted and destroyed live data for Google Drive, WhatsApp, Zoom, and Apple Shortcuts while all four were installed and running, plus Find My settings (`systemgroup.com.apple.icloud.searchpartyd.sharedsettings.plist`) and the Apple Wallet cache. The cause is structural, not a one-off: deletion was deny-listed, so anything a hand-maintained skip list failed to name was deleted by default.
+
+Matching is now deliberately generous — it protects on any of:
+1. Prefix match in either direction after normalization (team ID, `group.`, and `systemgroup.` prefixes stripped)
+2. Shared vendor namespace, first two components (`net.whatsapp.family` ← `net.whatsapp.WhatsApp`)
+3. A distinctive token (5+ chars) appearing in any installed bundle ID or app name
+4. For dot-less names only, a vendor token from an installed app appearing inside it (`ZoomClient3rd` ← `us.zoom.xos`)
+
+Additional guards: anything modified in the last 30 days is never flagged (a live app rewrites its support files constantly, which catches false positives regardless of name matching); anything resolving to a command on `PATH` is never flagged (CLI tools own no `.app` bundle); dot-less preference files are never flagged (app preferences are always named by bundle ID).
+
+Wrongly protecting a real orphan costs one line of output. Wrongly flagging a live app cost real data.
 - Orphaned LaunchAgents (background services referencing missing executables)
 - Login items referencing deleted apps (reported for manual review)
 - Third-party kernel extensions (reported, requires sudo)

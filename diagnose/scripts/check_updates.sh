@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+# Probe script: try each check, print what works, never abort on a failed sub-check.
 
 echo "=== Software Updates & Patches ==="
 
@@ -19,3 +19,5 @@ defaults read /Library/Preferences/com.apple.commerce AutoUpdate 2>/dev/null || 
 
 echo "=== Gatekeeper Status ==="
 spctl --status 2>/dev/null || true
+
+exit 0

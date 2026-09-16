@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+# Probe script: try each check, print what works, never abort on a failed sub-check.
 
 echo "=== Background Process Audit ==="
 
@@ -15,3 +15,5 @@ launchctl list | grep -v "com.apple" | head -15
 echo ""
 echo "High-impact background processes (>0.5% CPU or >1% MEM):"
 ps aux | awk '$3 > 0.5 || $4 > 1.0 {print $11, $3, $4}' | grep -v "Claude\|kernel_task\|WindowServer" | head -10 || echo "None found"
+
+exit 0

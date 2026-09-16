@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+# Probe script: try each check, print what works, never abort on a failed sub-check.
 
 echo "=== VPN & Remote Access ==="
 
@@ -14,3 +14,5 @@ systemsetup -getremotelogin 2>/dev/null || echo "Check requires admin"
 
 echo "=== Remote Management ==="
 /System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart -status 2>/dev/null || echo "Check requires admin"
+
+exit 0

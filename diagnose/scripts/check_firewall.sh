@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+# Probe script: try each check, print what works, never abort on a failed sub-check.
 
 echo "=== Firewall & Network Security ==="
 
@@ -22,3 +22,5 @@ scutil --dns 2>/dev/null | grep "nameserver\[0\]" | head -3 || true
 
 echo "=== Proxy Settings ==="
 scutil --proxy 2>/dev/null | grep -E "HTTPEnable|HTTPSEnable|HTTPProxy|HTTPSProxy" || true
+
+exit 0

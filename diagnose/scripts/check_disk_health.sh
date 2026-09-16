@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+# Probe script: try each check, print what works, never abort on a failed sub-check.
 
 echo "=== Disk Health (SMART Status) ==="
 
@@ -10,7 +10,12 @@ diskutil info disk0 | grep -E "SMART Status|Solid State|Media Name"
 # More detailed SMART data (requires admin)
 echo ""
 echo "SMART details:"
-smartctl -a disk0 2>/dev/null | grep -E "Temperature|Power_On_Hours|Wear_Leveling|Reallocated|Pending_Sector|Available_Reservd_Space|Percentage Used" || echo "SMART details require admin access"
+# smartctl ships with smartmontools, not macOS. Say so rather than failing silently.
+if command -v smartctl >/dev/null 2>&1; then
+  smartctl -a disk0 2>/dev/null | grep -E "Temperature|Power_On_Hours|Wear_Leveling|Reallocated|Pending_Sector|Available_Reservd_Space|Percentage Used" || echo "smartctl returned no detail (may need admin)"
+else
+  echo "smartctl not installed - run 'brew install smartmontools' for SMART detail"
+fi
 
 # Check disk errors in system log
 echo ""
@@ -21,3 +26,5 @@ log show --predicate 'subsystem == "com.apple.iokit.IOAHCIBlockStorage"' --last 
 echo ""
 echo "Disk temperature:"
 ioreg -r -c IOBlockStorageDriver | grep -E "Temperature|temperature" || echo "Temperature unavailable"
+
+exit 0

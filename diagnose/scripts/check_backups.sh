@@ -1,27 +1,40 @@
 #!/bin/bash
-set -e
+# Probe script: try each check, print what works, never abort on a failed sub-check.
 
-echo "=== Backup & Update Status ==="
+echo "=== Backup Status (Time Machine) ==="
 
-# Time Machine status
-echo "Time Machine latest backup:"
-tmutil latestbackup 2>/dev/null || echo "Time Machine not configured"
+# Software updates are reported by check_updates.sh and FileVault by check_encryption.sh.
+# Running softwareupdate -l here too meant two network round-trips to Apple for the same
+# data, and it is the slowest single call in the suite.
 
-echo ""
-echo "Time Machine status:"
-tmutil status 2>/dev/null | grep -E "Running|BackupPhase" || echo "Not backing up"
+echo "=== Configured Destinations ==="
+dest=$(tmutil destinationinfo 2>&1)
+if echo "$dest" | grep -q "No destinations configured"; then
+  echo "[HIGH] Time Machine has no destination configured - no backups are being taken"
+else
+  echo "$dest"
+fi
 
-# Last backup date
-echo ""
-echo "Last backup date:"
-latest=$(tmutil latestbackup 2>/dev/null) && ls -ld "$latest" 2>/dev/null | awk '{print $6, $7, $8}' || echo "N/A"
+echo "=== Latest Backup ==="
+# tmutil latestbackup exits non-zero and prints nothing when there are no snapshots,
+# so an unguarded call leaves a blank line that reads as "fine" in the report.
+latest=$(tmutil latestbackup 2>/dev/null)
+if [ -n "$latest" ]; then
+  echo "$latest"
+  echo "Backup date: $(stat -f "%Sm" -t "%Y-%m-%d %H:%M" "$latest" 2>/dev/null || echo unknown)"
+else
+  echo "[HIGH] No completed Time Machine backup found"
+fi
 
-# Software updates available
-echo ""
-echo "Software updates:"
-softwareupdate -l 2>/dev/null | grep -E "Title|recommended" || echo "No updates available"
+echo "=== Local Snapshots ==="
+snaps=$(tmutil listlocalsnapshots / 2>/dev/null | grep -c "com.apple.TimeMachine")
+if [ "${snaps:-0}" -gt 0 ]; then
+  echo "Local APFS snapshots: $snaps (most recent: $(tmutil listlocalsnapshots / 2>/dev/null | tail -1))"
+else
+  echo "No local APFS snapshots"
+fi
 
-# Check if FileVault is enabled
-echo ""
-echo "FileVault status:"
-fdesetup status 2>/dev/null || echo "FileVault status unavailable"
+echo "=== Current Activity ==="
+tmutil status 2>/dev/null | grep -E "Running|BackupPhase" || echo "Not currently backing up"
+
+exit 0

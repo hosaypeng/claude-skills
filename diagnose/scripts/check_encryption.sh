@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+# Probe script: try each check, print what works, never abort on a failed sub-check.
 
 echo "=== Encryption & Data Protection ==="
 
@@ -21,3 +21,5 @@ echo -n "askForPassword: "
 defaults read com.apple.screensaver askForPassword 2>/dev/null || echo "0"
 echo -n "askForPasswordDelay: "
 defaults read com.apple.screensaver askForPasswordDelay 2>/dev/null || echo "unknown"
+
+exit 0

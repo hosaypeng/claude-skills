@@ -92,16 +92,48 @@ PROJECTS_DIR="$HOME_DIR/.claude/projects"
 if [ -d "$PROJECTS_DIR" ]; then
   STALE_COUNT=0
   DEAD_PATH_COUNT=0
+  MEMORY_KEPT=0
   for proj_dir in "$PROJECTS_DIR"/*/; do
     [ -d "$proj_dir" ] || continue
     dir_name=$(basename "$proj_dir")
 
-    # Decode the directory name back to a filesystem path
-    # Format: -Users-hsp-Code-foo -> /Users/hsp/Code/foo
-    decoded_path=$(echo "$dir_name" | sed 's/^-/\//' | sed 's/-/\//g')
+    # Never trash a project that holds auto-memory. Memory is written to persist
+    # across sessions and has no other copy; transcripts are replaceable, it is not.
+    if [ -d "$proj_dir/memory" ] && [ -n "$(ls -A "$proj_dir/memory" 2>/dev/null)" ]; then
+      MEMORY_KEPT=$((MEMORY_KEPT + 1))
+      continue
+    fi
 
-    # If the decoded path no longer exists on disk, remove immediately
-    if [ ! -d "$decoded_path" ]; then
+    # Read the actual cwd from any JSONL in the project directory.
+    # Claude encodes paths by replacing '/' with '-', which is not safely reversible
+    # for paths containing hyphens. Reading the cwd field from JSONL avoids the lossy decode.
+    actual_path=$(python3 -c "
+import json, os, sys
+proj = sys.argv[1]
+try:
+    for fn in sorted(os.listdir(proj)):
+        if not fn.endswith('.jsonl'):
+            continue
+        with open(os.path.join(proj, fn)) as f:
+            for line in f:
+                try:
+                    d = json.loads(line.strip())
+                    if 'cwd' in d:
+                        print(d['cwd'])
+                        sys.exit(0)
+                except Exception:
+                    pass
+except Exception:
+    pass
+" "$proj_dir" 2>/dev/null) || true
+
+    if [ -z "$actual_path" ]; then
+      # No cwd found in any JSONL — skip conservatively
+      continue
+    fi
+
+    # If the project path no longer exists on disk, remove its cache
+    if [ ! -d "$actual_path" ]; then
       safe_trash "$proj_dir"
       DEAD_PATH_COUNT=$((DEAD_PATH_COUNT + 1))
       continue
@@ -119,6 +151,7 @@ if [ -d "$PROJECTS_DIR" ]; then
   done
   echo "  Removed $DEAD_PATH_COUNT project caches (dead paths)."
   echo "  Removed $STALE_COUNT project caches (>30 days inactive)."
+  [ "$MEMORY_KEPT" -gt 0 ] && echo "  Preserved $MEMORY_KEPT project cache(s) holding auto-memory."
 else
   echo "  No projects directory found."
 fi
@@ -155,8 +188,26 @@ done
 echo ""
 
 # 8. Orphaned Claude processes (detect only)
+# Exclude this script's own ancestry — the running session is not an orphan, and
+# listing it every time trains you to ignore the section.
 echo "--- Orphaned Processes ---"
-ORPHANED=$(ps aux 2>/dev/null | grep -i "claude" | grep -v grep | grep -v "$$" || true)
+SELF_PIDS=""
+probe=$$
+while [ -n "$probe" ] && [ "$probe" -gt 1 ] 2>/dev/null; do
+  SELF_PIDS="$SELF_PIDS $probe"
+  probe=$(ps -o ppid= -p "$probe" 2>/dev/null | tr -d ' ')
+done
+ORPHANED=$(ps aux 2>/dev/null | grep -i "claude" | grep -v grep || true)
+for pid in $SELF_PIDS; do
+  ORPHANED=$(echo "$ORPHANED" | awk -v p="$pid" '$2 != p')
+done
+# Command-line filters: the $( ) subshell that ran ps forks with a PID the
+# ancestry walk never sees, and Claude Desktop's helpers belong to an installed
+# app — neither is an orphan.
+ORPHANED=$(echo "$ORPHANED" \
+  | grep -v "skills/cleanup/scripts" \
+  | grep -v "/Applications/Claude.app" \
+  | sed '/^[[:space:]]*$/d' || true)
 if [ -n "$ORPHANED" ]; then
   echo "  Found potentially orphaned Claude processes:"
   echo "$ORPHANED" | sed 's/^/    /'
@@ -191,9 +242,11 @@ done
 echo ""
 
 # Summary
-FREED_MB=$((TOTAL_FREED / 1024))
 echo "=== Session Cleanup Complete ==="
 echo "Space recovered: approximately $(format_size $TOTAL_FREED)"
+if [ "$TOTAL_FAILED" -gt 0 ]; then
+  echo "Failed to trash: $TOTAL_FAILED item(s) — see errors above"
+fi
 
 # Log
 mkdir -p "$(dirname "$LOG_FILE")"

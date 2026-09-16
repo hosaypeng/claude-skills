@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+# Probe script: try each check, print what works, never abort on a failed sub-check.
 
 echo "=== Disk I/O Performance ==="
 
@@ -16,3 +16,5 @@ iostat -d -c 2 disk0 | tail -1
 echo ""
 echo "Processes in disk wait state:"
 ps aux | awk '{if ($8 ~ /D/) print $0}' | head -10 || echo "No processes in disk wait"
+
+exit 0

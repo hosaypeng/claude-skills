@@ -128,17 +128,18 @@ PNPM_CACHE="$HOME_DIR/.local/share/pnpm/store"
 GO_CACHE="$HOME_DIR/go/pkg/mod/cache"
 [ -d "$GO_CACHE" ] && safe_trash "$GO_CACHE"
 
-# Rust/Cargo registry
-CARGO_CACHE="$HOME_DIR/.cargo/registry"
-[ -d "$CARGO_CACHE" ] && safe_trash "$CARGO_CACHE"
-
-# Maven
-MAVEN_CACHE="$HOME_DIR/.m2/repository"
-[ -d "$MAVEN_CACHE" ] && safe_trash "$MAVEN_CACHE"
-
-# Gradle
-GRADLE_CACHE="$HOME_DIR/.gradle/caches"
-[ -d "$GRADLE_CACHE" ] && safe_trash "$GRADLE_CACHE"
+# Expensive-to-rebuild caches are report-only. The Maven repository in
+# particular can hold locally-built artifacts (mvn install) that exist nowhere
+# else and cannot be re-downloaded.
+for expensive in \
+  "$HOME_DIR/.cargo/registry" \
+  "$HOME_DIR/.m2/repository" \
+  "$HOME_DIR/.gradle/caches"; do
+  if [ -d "$expensive" ]; then
+    size=$(safe_size "$expensive")
+    echo "  ${expensive/#$HOME_DIR/~}: $(format_size $size) (report only — slow or impossible to rebuild)"
+  fi
+done
 
 # CocoaPods (cache only — repos and config must be preserved)
 COCOAPODS_CACHE="$HOME_DIR/.cocoapods/cache"
@@ -181,9 +182,12 @@ for pw_cache in "$HOME_DIR/Library/Caches/ms-playwright" "$HOME_DIR/Library/Cach
   [ -d "$pw_cache" ] && safe_trash "$pw_cache"
 done
 
-# Hugging Face (ML model cache)
+# Hugging Face (ML model cache — multi-GB re-downloads, report only)
 HF_CACHE="$HOME_DIR/.cache/huggingface"
-[ -d "$HF_CACHE" ] && safe_trash "$HF_CACHE"
+if [ -d "$HF_CACHE" ]; then
+  size=$(safe_size "$HF_CACHE")
+  echo "  ~/.cache/huggingface: $(format_size $size) (report only — multi-GB model re-downloads)"
+fi
 
 # Gemini CLI browser profile (report only — contains OAuth tokens and auth state)
 GEMINI_BROWSER="$HOME_DIR/.gemini/antigravity-browser-profile"
@@ -421,9 +425,11 @@ echo ""
 
 # 13. Time Machine Local Snapshots (report only)
 echo "--- Time Machine Snapshots ---"
-SNAPSHOTS=$(tmutil listlocalsnapshots / 2>/dev/null || true)
-if [ -n "$SNAPSHOTS" ]; then
-  SNAP_COUNT=$(echo "$SNAPSHOTS" | wc -l | tr -d ' ')
+# tmutil always prints a "Snapshots for disk /:" header, so count only the
+# com.apple.TimeMachine entries rather than every output line.
+SNAP_COUNT=$(tmutil listlocalsnapshots / 2>/dev/null | grep -c "com.apple.TimeMachine" || true)
+SNAP_COUNT=${SNAP_COUNT:-0}
+if [ "$SNAP_COUNT" -gt 0 ]; then
   echo "  $SNAP_COUNT local snapshot(s) found (run 'sudo tmutil deletelocalsnapshots <date>' to remove)"
 else
   echo "  No local snapshots."
@@ -431,12 +437,14 @@ fi
 echo ""
 
 # Summary
-FREED_MB=$((TOTAL_FREED / 1024))
 echo "=== System Cache Cleanup Complete ==="
 echo "Space recovered: approximately $(format_size $TOTAL_FREED)"
+if [ "$TOTAL_FAILED" -gt 0 ]; then
+  echo "Failed to trash: $TOTAL_FAILED item(s) — see errors above"
+fi
 echo ""
-echo "Disk usage after cleanup:"
-df -h "$HOME_DIR" | head -2
+echo "Disk free space is unchanged until the Trash is emptied — everything above"
+echo "was moved to ~/.Trash on the same volume, not deleted."
 
 # Log
 mkdir -p "$(dirname "$LOG_FILE")"

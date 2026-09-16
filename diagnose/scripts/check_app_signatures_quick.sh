@@ -1,15 +1,20 @@
 #!/bin/bash
-set -e
+# Probe script: try each check, print what works, never abort on a failed sub-check.
 
 echo "=== Application Signature Summary (Quick Scan) ==="
 
+# Top-level bundles only. Nested bundles are covered by check_app_signatures.sh.
 for app in /Applications/*.app; do
+    [ -d "$app" ] || continue
     name=$(basename "$app")
-    result=$(codesign -v "$app" 2>&1)
-    if [ $? -eq 0 ]; then
-        authority=$(codesign -dv "$app" 2>&1 | grep "Authority=" | head -1 | sed 's/Authority=//')
-        echo "VALID: $name - $authority"
+    if result=$(codesign -v "$app" 2>&1); then
+        # Authority only appears at --verbose=2; plain -dv omits it entirely.
+        authority=$(codesign -dv --verbose=2 "$app" 2>&1 | sed -n 's/^Authority=//p' | head -1)
+        echo "VALID: $name - ${authority:-unknown authority}"
     else
-        echo "INVALID: $name - UNSIGNED or INVALID: $result" >&2
+        # Findings go to stdout alongside the passes; stderr would bury the half that matters.
+        echo "[CRITICAL] INVALID: $name - $(echo "$result" | head -1 | sed "s|^$app: ||")"
     fi
 done
+
+exit 0

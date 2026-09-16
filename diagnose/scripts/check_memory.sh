@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+# Probe script: try each check, print what works, never abort on a failed sub-check.
 
 echo "=== Memory Usage ==="
 
@@ -15,3 +15,5 @@ sysctl vm.swapusage
 echo ""
 echo "Top memory consumers (MB):"
 ps axo rss,comm | awk '{sum[$2]+=$1} END {for (p in sum) print sum[p]/1024, p}' | sort -rn | head -15
+
+exit 0

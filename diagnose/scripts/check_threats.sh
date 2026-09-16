@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+# Probe script: try each check, print what works, never abort on a failed sub-check.
 
 echo "=== Suspicious Activity & Threats ==="
 
@@ -23,3 +23,5 @@ osascript -e 'tell application "System Events" to get the name of every login it
 
 echo "--- Third-Party Kernel Extensions ---"
 kextstat 2>/dev/null | grep -v "com.apple" | head -10 || echo "None or kextstat unavailable"
+
+exit 0

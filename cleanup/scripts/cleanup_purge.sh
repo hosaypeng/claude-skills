@@ -33,7 +33,6 @@ if [ ${#SCAN_DIRS[@]} -eq 0 ]; then
   for d in \
     "$HOME_DIR/Code" \
     "$HOME_DIR/Projects" \
-    "$HOME_DIR/Code" \
     "$HOME_DIR/dev" \
     "$HOME_DIR/GitHub" \
     "$HOME_DIR/Repos"; do
@@ -124,6 +123,9 @@ echo ""
 echo "=== Project Artifact Purge Complete ==="
 echo "Artifacts removed: $ARTIFACT_COUNT"
 echo "Space recovered: approximately $(format_size $TOTAL_SIZE)"
+if [ "$TOTAL_FAILED" -gt 0 ]; then
+  echo "Failed to trash: $TOTAL_FAILED item(s) — see errors above"
+fi
 echo ""
 echo "Configure scan paths: $PATHS_FILE (one directory per line)"
 
