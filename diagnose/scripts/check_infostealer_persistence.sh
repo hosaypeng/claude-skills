@@ -18,7 +18,12 @@ verify_plists() {
       # Shell and script interpreters are never code-signed, so running codesign on them
       # would flag every legitimate helper script. For those the real risk is whether a
       # non-root user can rewrite the file that a LaunchAgent executes.
-      if file -b "$binary" 2>/dev/null | grep -q "Mach-O"; then
+      kind=$(file -b "$binary" 2>&1)
+      if echo "$kind" | grep -q "cannot open"; then
+        # Root-only helpers (mode 711) cannot be read, so they cannot be classified as
+        # script or Mach-O. Say so rather than falling into the script branch.
+        status="unreadable (root-only, mode $(stat -f "%OLp" "$binary" 2>/dev/null)) - cannot verify signature"
+      elif echo "$kind" | grep -q "Mach-O"; then
         if codesign -v "$binary" >/dev/null 2>&1; then
           # Authority only appears at --verbose=2; plain -dv omits it.
           authority=$(codesign -dv --verbose=2 "$binary" 2>&1 | sed -n 's/^Authority=//p' | head -1)
@@ -27,7 +32,7 @@ verify_plists() {
           status="[HIGH] UNSIGNED/INVALID Mach-O"
         fi
       else
-        kind=$(file -b "$binary" 2>/dev/null | cut -c1-40)
+        kind=$(echo "$kind" | cut -c1-40)
         # Owner-writable is normal for a user's own automation. The real risk is a target a
         # *different* account can rewrite, so score on the group/other write bits, not on -w.
         perm=$(stat -f "%OLp" "$binary" 2>/dev/null)

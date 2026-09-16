@@ -40,12 +40,14 @@ report the same underlying condition.
 | Category | Max | Deductions |
 |---|---|---|
 | Network Security | 15 | firewall disabled -8; stealth mode off -3; sensitive port listening -4; unrecognised external DNS resolver -2; loopback DNS with no local resolver running -6; proxy enabled unexpectedly -3 |
-| Encryption | 15 | FileVault off -15; no firmware password -3; keychain has no lock timeout -2 |
+| Encryption | 15 | FileVault off -15; no firmware password -3 (Intel only - never on Apple Silicon); keychain has no lock timeout -2 |
 | Authentication | 15 | passwordless sudo -15; root enabled -8; unencrypted SSH private key -6; auto-login enabled -5; screen lock disabled -5; lock delay > 5 sec -2 |
-| Updates | 15 | pending security update -6; automatic checks disabled -4; Gatekeeper disabled -8 |
+| Updates | 15 | pending security update -6; automatic checks explicitly disabled (key present and 0, not merely absent) -4; Gatekeeper disabled -8 |
 | Infostealer Detection | 20 | IOC path match -20; unsigned Mach-O in temp dir -12; non-browser process holding a credential DB -12; unsigned Mach-O behind a LaunchAgent/Daemon -8; LaunchAgent/Daemon target that is group- or world-writable -8; suspicious shell rc entry -8 |
 | Threat Level | 10 | invalid/unsigned commercial app -10; revoked certificate -10; third-party kernel extension -4; unexplained root process -3 |
-| Privacy | 10 | Safari fraud warnings off -4; tracking prevention off -3; unknown browser extension -3 |
+| Privacy | 10 | Safari fraud warnings explicitly off (key present and false) -4; tracking prevention off -3; unknown browser extension -3 |
+
+**Absent keys are defaults.** `check_updates` and `check_browser_security` print `not set (macOS default: enabled)` / `default (on)` when a preference key does not exist. That is the secure default, scores **0**, and is not "unknown". Deduct only for a key that is present and explicitly off.
 
 Screen lock is scored under Authentication only - do not also deduct it under Encryption.
 

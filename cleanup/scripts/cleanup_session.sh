@@ -28,6 +28,17 @@ if ls -d "$SCRATCHPAD_BASE"/claude-* 1>/dev/null 2>&1; then
       echo "  Skipping active session: $dir_clean"
       continue
     fi
+    # Other claude-* dirs can be live too: the MCP browser bridge keeps a Unix socket in
+    # /private/tmp/claude-mcp-browser-bridge-<user>/, and moving it mid-session breaks the
+    # bridge. A socket inside, or any write in the last 24h, means in use.
+    if find "$dir_clean" -maxdepth 2 -type s -print -quit 2>/dev/null | grep -q .; then
+      echo "  Skipping (live socket inside): $dir_clean"
+      continue
+    fi
+    if is_recently_modified "$dir_clean" 1; then
+      echo "  Skipping (modified in last 24h): $dir_clean"
+      continue
+    fi
     safe_trash "$dir"
   done
 else

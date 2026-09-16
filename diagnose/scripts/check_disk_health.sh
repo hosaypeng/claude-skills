@@ -20,7 +20,8 @@ fi
 # Check disk errors in system log
 echo ""
 echo "Disk errors (last 24h):"
-log show --predicate 'subsystem == "com.apple.iokit.IOAHCIBlockStorage"' --last 24h 2>/dev/null | grep -i error | wc -l || echo "Log check unavailable"
+# Apple Silicon storage is NVMe (IONVMeFamily); IOAHCIBlockStorage is the Intel SATA path.
+log show --predicate '(subsystem CONTAINS "IONVMe" OR subsystem == "com.apple.iokit.IOAHCIBlockStorage") AND eventMessage CONTAINS[c] "error"' --last 24h --style compact 2>/dev/null | grep -v "^Timestamp" | grep -c . || echo "Log check unavailable"
 
 # Get disk temperature if available
 echo ""

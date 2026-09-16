@@ -10,6 +10,7 @@ ps axo pid,ppid,state,etime,comm | grep -E '^[[:space:]]*[0-9]+[[:space:]]+[0-9]
 # Long-running dev processes
 echo ""
 echo "Long-running dev processes:"
-ps axo pid,etime,pcpu,pmem,comm | grep -E "claude|node|git|rg|bun|npm" | grep -v grep || echo "None found"
+# Unanchored "bun|rg|git" matched powerd.bundle, HomeEnergyWidgets and RTProtectionDaemon.
+ps axo pid,etime,pcpu,pmem,comm | grep -E "(^|[ /])(claude|node|git|rg|bun|npm)( |$)" | grep -v grep || echo "None found"
 
 exit 0

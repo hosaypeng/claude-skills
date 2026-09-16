@@ -146,12 +146,25 @@ else
 fi
 
 # Recent Items
+# macOS 27 writes .sfl4 files, and per-app recents live one level down in
+# ApplicationRecentDocuments/. The old top-level *.sfl2/*.sfl3 glob matched nothing and
+# still printed "cleared". The same directory also holds the Finder sidebar
+# (FavoriteItems, FavoriteVolumes, TopSidebarSection, iCloudItems, ProjectsItems,
+# NetworkBrowser), so only Recent* lists and the per-app directory are touched.
 RI_DIR="$HOME_DIR/Library/Application Support/com.apple.sharedfilelist"
 if [ -d "$RI_DIR" ]; then
-  for f in "$RI_DIR"/*.sfl2 "$RI_DIR"/*.sfl3; do
-    [ -f "$f" ] && safe_trash "$f"
+  RI_COUNT=0
+  for f in "$RI_DIR"/com.apple.LSSharedFileList.Recent*.sfl* \
+           "$RI_DIR"/com.apple.LSSharedFileList.ApplicationRecentDocuments/*.sfl*; do
+    [ -f "$f" ] || continue
+    safe_trash "$f"
+    RI_COUNT=$((RI_COUNT + 1))
   done
-  echo "Recent Items: cleared"
+  if [ "$RI_COUNT" -gt 0 ]; then
+    echo "Recent Items: cleared $RI_COUNT list(s) (Finder sidebar lists untouched)"
+  else
+    echo "Recent Items: nothing to clear"
+  fi
 else
   echo "Recent Items: not found"
 fi

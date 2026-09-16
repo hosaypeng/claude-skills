@@ -46,10 +46,14 @@ Scripts tag their own findings inline with `[CRITICAL]`/`[HIGH]`/`[MEDIUM]`/`[LO
 severities through to the report rather than re-deriving risk from raw output.
 
 ## Domain Notes
-- **Battery:** Explain why Apple's reported % differs from actual (NominalChargeCapacity vs AppleRawMaxCapacity). Assess cell balance, cycle count, and recommend replace/keep.
+- **Battery:** macOS 27 exposes only `FullChargeCapacity`, `NominalChargeCapacity` and `DesignCapacity` (inside the `BatteryData` dict) plus `CycleCount`. The script prints Health = FullCharge/Design; compare it with Apple's "Maximum Capacity" (which uses NominalCharge) and explain the gap. Cell voltages, temperature and `AppleRawMaxCapacity` are no longer exposed - do not claim to assess cell balance. Recommend replace/keep from health % and cycles vs `DesignCycleCount9C`.
+- **Apple Silicon:** no firmware password exists (Secure Boot policy replaces it); `check_encryption` reports "Not applicable" and it is never a deduction.
 - **DNS:** Flag non-standard servers (anything other than ISP default, 1.1.1.1, 8.8.8.8, 9.9.9.9, or known VPN DNS).
 - **App signatures:** Cross-reference against known developers in output_format.md. "Apple Development" or ad-hoc on commercial software = suspicious. `CSSMERR_TP_CERT_REVOKED` is more serious than a missing sealed resource: the former means the developer certificate was revoked, the latter often just means the app self-updated.
 - **Overlap with /threat-hunt:** the two skills deliberately maintain *parallel* implementations of the persistence, credential, keychain, and IOC checks so each runs standalone. This duplication is intentional - do not consolidate it. diagnose covers commodity stealers; threat-hunt covers nation-state implants and keeps its own Pegasus/Candiru IOC sets.
+
+## Compatibility
+Verified end to end on macOS 27.0 (26A428), Apple M3, 2026-09-16. Safari prefs are read from the app container, kexts via `kmutil`, crash reports as `.ips`, battery from `BatteryData`, and absent SoftwareUpdate keys mean the default (enabled).
 
 ## Output
 Format per `~/.claude/skills/diagnose/references/output_format.md`. Produce a security score (X/100) for any mode that includes security. After the report, ask if the user wants help fixing issues.

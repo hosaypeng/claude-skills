@@ -2,7 +2,7 @@
 
 ## Session Mode (`/cleanup session`)
 Removes Claude-specific session artifacts:
-- Scratchpad directories under `/private/tmp/claude-*`
+- Scratchpad directories under `/private/tmp/claude-*` (skips the current session, any directory holding a live Unix socket such as the MCP browser bridge, and anything modified in the last 24h)
 - Debug logs older than 7 days (`~/.claude/debug/`)
 - Claude desktop app cache (`~/Library/Application Support/Claude/Cache/`)
 - Old VM bundles — keeps only the latest (`~/Library/Application Support/Claude/vm_bundles/`)
@@ -43,11 +43,11 @@ Only targets artifacts older than 30 days and larger than 1MB. Scan paths are co
 
 ## Forensic Mode (`/cleanup forensic`)
 Removes privacy-sensitive traces left by uninstalled apps:
-- Quarantine events database (download history)
-- KnowledgeC database (app usage history)
-- CoreDuet database (interaction patterns)
-- Recent items and Spotlight shortcuts
-- Launch Services database rebuild
+- Quarantine events database (download history) - report only
+- KnowledgeC database (app usage history) - report only
+- Recent items: the `Recent*` lists and every per-app list in `ApplicationRecentDocuments/` (`.sfl2`/`.sfl3`/`.sfl4`). The Finder sidebar lists in the same directory (FavoriteItems, FavoriteVolumes, TopSidebarSection, iCloudItems, ProjectsItems, NetworkBrowser) are never touched.
+- CoreDuet database, Spotlight shortcuts, Siri suggestions: these directories no longer exist on macOS 27; the checks are kept as guarded no-ops and report "not found".
+- Launch Services database rebuild (printed as a manual command only)
 
 ### Category B — orphan detection is REPORT ONLY
 
