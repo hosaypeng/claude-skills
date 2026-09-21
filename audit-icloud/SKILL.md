@@ -38,24 +38,27 @@ shell cannot answer, so the confirmation happens in chat instead: dry-run → sh
 
 ## What the CLI reports
 
-- **Artifacts** — `[ARTIFACT] <path> (<size>)`: `.DS_Store`, `Thumbs.db`, `*.tmp`, `._*`, and the
-  directories `.Spotlight-*`, `.Trashes`, `__MACOSX`, `.fseventsd`, `.TemporaryItems`.
-- **Containers** — `--- <container> (<n> files, <size>[, <n> not downloaded]) ---`, then per-file
-  rows (≤50 files) or rows grouped by top-level item, largest first. WhatsApp containers carry an
-  `(encrypted WhatsApp backup — never modify)` note; `iCloud~md~obsidian` is counted but not listed.
-- **Summary** — total files, total size, not-downloaded count, containers with files, empty
-  containers, artifact count and size.
+1. **Header** — `<n> files · <size> · <used> of <all> containers in use · <n> artifacts (<size>)`.
+2. **Artifacts** — one row per item: `<size>  <file|dir>  <path relative to the mirror>` for
+   `.DS_Store`, `Thumbs.db`, `*.tmp`, `._*`, and the directories `.Spotlight-*`, `.Trashes`,
+   `__MACOSX`, `.fseventsd`, `.TemporaryItems`. `Artifacts  none` when clean.
+3. **Containers** — overview sorted by size: `<size>  <n> files  <App name>  <container id> — <note>`.
+   Notes: `encrypted, never modify` (WhatsApp), `audited separately` (the Obsidian container),
+   `<n> not downloaded` (`.icloud` placeholders, counted but never sized). Empty containers are
+   summarised in one line.
+4. **Per-container sections** (`full` only) — `<App name>  <container id>  ·  <n> files, <size>`
+   then `<size>  <path>` rows (≤50 files) or `<size>  <n> files  <top-level item>` rows grouped and
+   sorted by size. WhatsApp and the Obsidian container have no section. Output is never
+   truncated when piped, so you see full paths.
 
 `clean` moves each artifact to `~/.Trash/<name>.<timestamp>` with `mv -n` and prints a restore
 `mv` line per item. It skips anything inside a WhatsApp container. Nothing is ever `rm`'d.
 
 ## Presentation
 
-1. **Artifacts table** (if any): `| Type | Path | Size |`
-2. **Container table** (always): `| Container | Files | Size |`
-3. **Totals line**: total files, total size, containers with files, empty containers.
-4. For `full`, also show the per-file / grouped listings.
-5. For `clean`, after the real run show the moved items and their restore lines.
+The CLI output is already laid out for reading; relay it rather than re-tabulating it. Lead
+with the header line and anything notable (large containers, artifacts, not-downloaded files).
+For `clean`, after the real run show the moved items and their restore lines.
 
 ## Rules
 
