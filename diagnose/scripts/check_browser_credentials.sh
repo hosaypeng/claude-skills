@@ -9,7 +9,9 @@ report_db() {
   local db="$1" owner_pattern="$2" mod open_by
   mod=$(stat -f "%Sm" -t "%Y-%m-%d %H:%M" "$db" 2>/dev/null || echo unknown)
   echo "  $(basename "$(dirname "$db")")/$(basename "$db") (modified: $mod)"
-  open_by=$(lsof "$db" 2>/dev/null | grep -v "^COMMAND" | grep -viE "$owner_pattern")
+  # Match the owner against the COMMAND column only. Every lsof line ends with the file
+  # path, which contains the browser's name, so a whole-line grep -v could never fire.
+  open_by=$(lsof +c 0 "$db" 2>/dev/null | awk -v p="$owner_pattern" 'NR > 1 && tolower($1) !~ p')
   if [ -n "$open_by" ]; then
     echo "    [HIGH] Held open by a process that is not the owning browser:"
     echo "$open_by" | sed 's/^/      /'
@@ -34,6 +36,8 @@ scan_browser() {
 
 scan_browser "Chrome"  "$HOME/Library/Application Support/Google/Chrome" "Login Data" "google|chrome" 3
 scan_browser "Brave"   "$HOME/Library/Application Support/BraveSoftware/Brave-Browser" "Login Data" "brave" 3
+# Helium (net.imput.helium) is the primary browser on this machine; it was missing here.
+scan_browser "Helium"  "$HOME/Library/Application Support/net.imput.helium" "Login Data" "helium" 3
 scan_browser "Arc"     "$HOME/Library/Application Support/Arc" "Login Data" "arc" 4
 scan_browser "Firefox" "$HOME/Library/Application Support/Firefox/Profiles" "logins.json" "firefox" 2
 

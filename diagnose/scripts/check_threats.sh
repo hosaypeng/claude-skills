@@ -24,9 +24,11 @@ ps aux | awk '$1 == "root" && $3 > 1.0 {print $11}' | grep -v "kernel_task\|Wind
 
 echo "--- Hidden Files in Exploit Locations ---"
 echo "In /tmp:"
-find /tmp -name ".*" -type f 2>/dev/null | head -10 || echo "None"
+hidden_tmp=$(find -H /tmp -name ".*" -type f 2>/dev/null | head -10)   # -H: /tmp is a symlink
+[ -n "$hidden_tmp" ] && echo "$hidden_tmp" || echo "None"
 echo "In ~/.ssh:"
-find ~/.ssh -name ".*" -type f 2>/dev/null | head -5 || echo "None"
+hidden_ssh=$(find ~/.ssh -name ".*" -type f 2>/dev/null | head -5)
+[ -n "$hidden_ssh" ] && echo "$hidden_ssh" || echo "None"
 
 echo "--- Login Items ---"
 osascript -e 'tell application "System Events" to get the name of every login item' 2>/dev/null || echo "Could not retrieve login items"

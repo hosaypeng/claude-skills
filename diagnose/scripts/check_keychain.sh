@@ -45,9 +45,9 @@ fi
 
 echo "=== Top Keychain Consumers ==="
 if [ "$access_count" -gt 0 ]; then
-  # Compact format: date time Ty Process[PID:TID] [subsystem:category] msg. Column 5 is
-  # the category, which is what this table used to show; the process is column 4.
-  echo "$item_access" | awk '{print $4}' | sed 's/\[.*//' | sort | uniq -c | sort -rn | head -10 | sed 's/^/  /'
+  # Compact format: date time Ty Process[PID:TID] [subsystem:category] msg. The process
+  # name can contain spaces ("Google Drive"), so take everything before the first [PID:TID].
+  echo "$item_access" | sed -E 's/^[^ ]+ +[^ ]+ +[^ ]+ +([^[]*)\[[0-9]+:[0-9]+\].*/\1/' | sort | uniq -c | sort -rn | head -10 | sed 's/^/  /'
 else
   echo "  None"
 fi

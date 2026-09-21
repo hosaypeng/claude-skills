@@ -1,11 +1,11 @@
 #!/bin/bash
-set -e
+# Probe script: try each check, print what works, never abort on a failed sub-check.
 
 # check_dylib_injection.sh — Detect DYLD_INSERT_LIBRARIES abuse
 
 echo "=== DYLD_* in LaunchAgent/Daemon Plists ==="
 found=0
-for dir in "/Users/$USER/Library/LaunchAgents" "/Library/LaunchAgents" "/Library/LaunchDaemons"; do
+for dir in "$HOME/Library/LaunchAgents" "/Library/LaunchAgents" "/Library/LaunchDaemons"; do
   [ -d "$dir" ] || continue
   results=$(grep -rl "DYLD_" "$dir" 2>/dev/null || true)
   if [ -n "$results" ]; then
@@ -34,3 +34,5 @@ echo "  $sip_status"
 if echo "$sip_status" | grep -q "disabled"; then
   echo "  [CRITICAL] SIP disabled — DYLD injection is unrestricted"
 fi
+
+exit 0

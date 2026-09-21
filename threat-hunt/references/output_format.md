@@ -16,7 +16,7 @@
 
 ## IOC Staleness Banner
 
-Print after disclaimer when IOC mode is included:
+Print after disclaimer when IOC mode is included, built from the dates the match scripts print:
 
 ```
 IOC Database: Pegasus (YYYY-MM-DD, X days ago) | Candiru (YYYY-MM-DD, X days ago) | C2 Domains (YYYY-MM-DD, X days ago)
@@ -25,6 +25,10 @@ IOC Database: Pegasus (YYYY-MM-DD, X days ago) | Candiru (YYYY-MM-DD, X days ago
 - < 30 days: no warning
 - 30-89 days: `[MEDIUM] IOC lists are stale. Update recommended.`
 - >= 90 days: `[CRITICAL] IOC lists are severely outdated. Update immediately.`
+
+Every match script repeats its own staleness tag so single-script runs still show it. In the
+report, state it once here and apply it once in scoring (see below). Staleness never triggers
+the incident response protocol.
 
 ## Finding Format
 
@@ -69,10 +73,12 @@ Each finding follows this structure:
 | No password manager detected | MEDIUM |
 | Clipboard contains secret pattern | MEDIUM |
 | ForwardAgent yes in SSH config | MEDIUM |
-| IOC list > 90 days stale | MEDIUM |
+| IOC list >= 90 days stale | IOC category unverified (see scoring) |
+| IOC list 30-89 days stale | MEDIUM |
+| Orphaned LaunchAgent (target binary missing) | LOW |
+| Non-Apple launchd service with non-zero exit status | LOW |
 | Stale periodic scripts | LOW |
-| IOC list > 30 days stale | LOW |
-| Find My Mac off | LOW |
+| Find My Mac / USB Restricted Mode / Activation Lock not verifiable | INFO (no deduction) |
 | Screen lock delay > 5 sec | LOW |
 | authorized_keys modified recently | LOW |
 
@@ -93,10 +99,23 @@ Raw scoring uses 6 categories at 20 points each (120 total), normalized to /100.
 
 **When running a single mode:** Score only that category's /20, normalize to /100.
 
+**Unverified categories.** If the runner lists a script under INCOMPLETE SCRIPTS, or every IOC
+list is >= 90 days old, the category it feeds is *unscored*, not full marks and not zero. Report
+the score as `X/100 (Y points unverified)` and name the cause. Never silently treat a missing or
+stale check as a pass.
+
+**Absent keys are defaults.** `verify_hardening` prints `not set (macOS default: enabled)` when a
+preference key does not exist. That is the secure default and scores 0. Deduct only for a key that
+is present and explicitly off. `[INFO]` lines never deduct.
+
+**Writable LaunchAgent targets.** Owner-writable scripts are normal for a user's own automation and
+score 0. Deduct HIGH only for an unsigned Mach-O target or a target that is group- or world-writable.
+
 ## Recommendations Format
 
 Priority-ordered: CRITICAL → HIGH → MEDIUM → LOW. Each with specific action.
 
 ## If CRITICAL Finding
 
-Print the incident response protocol from `references/incident_response_protocol.md`.
+Print the incident response protocol from `references/incident_response_protocol.md` — except for
+IOC staleness, which is a maintenance task, not an incident.

@@ -1,146 +1,201 @@
 #!/bin/bash
-set -e
+# Health check: pass/fail sweep of the user's own automation. Every section runs even if
+# an earlier one fails, so no `set -e` - a broken brew call must not hide the sections
+# after it. Output lines start with OK / WARN / FAIL / SKIP for grep-ability.
+
+RECOVERY="$HOME/Code/macos-recovery-setup"
+VAULT="$HOME/Documents/obsidian"
+SKILLS="$HOME/.claude/skills"
 
 echo "=== Health Check ==="
 
-# Check LaunchAgents
-echo ""
-echo "--- LaunchAgents ---"
-for plist in "$HOME"/Library/LaunchAgents/com.hsp.*.plist "$HOME"/Library/LaunchAgents/com.hosaypeng.*.plist; do
-  [ ! -f "$plist" ] && continue
-  name=$(basename "$plist" .plist)
-  if launchctl list "$name" &>/dev/null; then
-    echo "OK: $name (running)"
-  else
-    echo "FAIL: $name (not loaded)"
-  fi
-done
+check_launchagents() {
+  echo ""
+  echo "--- LaunchAgents ---"
+  # Every user-installed agent, not just the com.hsp/com.hosaypeng prefixes: nanoclaw,
+  # battery-monitor and hermes were invisible to the old glob. Vendor updaters are skipped.
+  local plist name entry pid status
+  for plist in "$HOME"/Library/LaunchAgents/*.plist; do
+    [ -f "$plist" ] || continue
+    name=$(basename "$plist" .plist)
+    case "$name" in com.apple.*|com.google.*|homebrew.mxcl.*) continue ;; esac
+    entry=$(launchctl list 2>/dev/null | awk -v l="$name" '$3 == l')
+    if [ -z "$entry" ]; then
+      echo "FAIL: $name (not loaded)"
+      continue
+    fi
+    pid=$(echo "$entry" | awk '{print $1}')
+    status=$(echo "$entry" | awk '{print $2}')
+    if [ "$status" != "0" ] && [ "$status" != "-" ]; then
+      echo "WARN: $name (last exit status $status)"
+    elif [ "$pid" != "-" ]; then
+      echo "OK: $name (running, pid $pid)"
+    else
+      echo "OK: $name (loaded)"
+    fi
+  done
+}
 
-# Check git repos for uncommitted changes
-echo ""
-echo "--- Git Repos ---"
-for repo in "$HOME"/Code/*/; do
-  [ ! -d "$repo/.git" ] && continue
+check_repo() {
+  local repo="$1" name status unpushed
+  [ -d "$repo/.git" ] || return 0
   name=$(basename "$repo")
-  status=$(cd "$repo" && git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
-  unpushed=$(cd "$repo" && git log --oneline @{u}..HEAD 2>/dev/null | wc -l | tr -d ' ')
-  if [ "$status" -gt 0 ] || [ "$unpushed" -gt 0 ]; then
+  status=$(git -C "$repo" status --porcelain 2>/dev/null | wc -l | tr -d ' ')
+  # Without an upstream `git log @{u}..HEAD` fails and the old code read that as
+  # "0 unpushed", so a never-pushed repo always showed OK.
+  if git -C "$repo" rev-parse --abbrev-ref '@{u}' >/dev/null 2>&1; then
+    unpushed=$(git -C "$repo" log --oneline '@{u}..HEAD' 2>/dev/null | wc -l | tr -d ' ')
+  else
+    unpushed="no-upstream"
+  fi
+  if [ "$status" -gt 0 ] || [ "$unpushed" != "0" ]; then
     echo "WARN: $name ($status uncommitted, $unpushed unpushed)"
   else
     echo "OK: $name"
   fi
-done
+}
 
-# Check vault backup (iCloud sync)
-echo ""
-echo "--- Vault ---"
-VAULT="$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents"
-if [ -d "$VAULT" ]; then
-  note_count=$(find "$VAULT" -name "*.md" -not -path "*/.git/*" 2>/dev/null | wc -l | tr -d ' ')
-  echo "OK: Vault accessible ($note_count notes)"
-else
-  echo "FAIL: Vault not found"
-fi
+check_git_repos() {
+  echo ""
+  echo "--- Git Repos ---"
+  local repo
+  for repo in "$HOME"/Code/*/; do
+    check_repo "${repo%/}"
+  done
+  check_repo "$VAULT"
+  check_repo "$SKILLS"
+}
 
-# Check habits pipeline
-echo ""
-echo "--- Habits Pipeline ---"
-HABITS_JSON="$HOME/Code/hosaypeng.github.io/_data/habits.json"
-if [ -f "$HABITS_JSON" ]; then
-  age=$(( ($(date +%s) - $(stat -f %m "$HABITS_JSON")) / 86400 ))
-  if [ "$age" -gt 7 ]; then
-    echo "WARN: habits.json is ${age} days old (run /update-habits)"
+check_vault() {
+  echo ""
+  echo "--- Vault ---"
+  local note_count
+  if [ -d "$VAULT" ]; then
+    note_count=$(find "$VAULT" -name "*.md" -not -path "*/.git/*" 2>/dev/null | wc -l | tr -d ' ')
+    echo "OK: Vault accessible ($note_count notes)"
   else
-    echo "OK: habits.json updated ${age} days ago"
+    echo "FAIL: Vault not found at $VAULT"
   fi
-else
-  echo "FAIL: habits.json not found"
-fi
+}
 
-# Check for dead paths in memory/config files and LaunchAgent plists
-echo ""
-echo "--- Path Audit ---"
-AUDIT_SCRIPT="$HOME/.claude/skills/audit-paths/scripts/audit_paths.sh"
-if [ -f "$AUDIT_SCRIPT" ]; then
-  dead_output=$(bash "$AUDIT_SCRIPT" all 2>&1 | grep "^DEAD" || true)
-  if [ -n "$dead_output" ]; then
-    dead_count=$(echo "$dead_output" | wc -l | tr -d ' ')
-  else
-    dead_count=0
+check_habits() {
+  echo ""
+  echo "--- Habits Pipeline ---"
+  # The pipeline is stale only when the vault source is newer than the published JSON.
+  # Age alone flagged a 164-day-old habits.json whose source had not changed since April,
+  # and told the user to run a push that would publish nothing.
+  local habits_json="$HOME/Code/hosaypeng.github.io/_data/habits.json" src src_age json_age
+  if [ ! -f "$habits_json" ]; then
+    echo "FAIL: habits.json not found"
+    return 0
   fi
-  if [ "$dead_count" -gt 0 ]; then
+  src=$(ls -t "$VAULT"/50_areas/personal/all_habits*.md 2>/dev/null | head -1)
+  json_age=$(( ($(date +%s) - $(stat -f %m "$habits_json")) / 86400 ))
+  if [ -z "$src" ]; then
+    echo "WARN: no all_habits*.md found in the vault (habits.json is ${json_age} days old)"
+  elif [ "$(stat -f %m "$src")" -gt "$(stat -f %m "$habits_json")" ]; then
+    src_age=$(( ($(date +%s) - $(stat -f %m "$src")) / 86400 ))
+    echo "WARN: $(basename "$src") edited ${src_age} days ago but habits.json is ${json_age} days old (run /update-habits)"
+  else
+    echo "OK: habits.json (${json_age} days old) is newer than $(basename "$src")"
+  fi
+}
+
+check_paths() {
+  echo ""
+  echo "--- Path Audit ---"
+  local audit_script="$SKILLS/audit-paths/scripts/audit_paths.sh" dead_count
+  if [ ! -f "$audit_script" ]; then
+    echo "SKIP: audit-paths skill not found"
+    return 0
+  fi
+  dead_count=$(bash "$audit_script" all 2>&1 | grep -c "^DEAD" || true)
+  if [ "${dead_count:-0}" -gt 0 ]; then
     echo "WARN: ${dead_count} dead path(s) found (run /audit-paths for details)"
   else
     echo "OK: All paths valid"
   fi
-else
-  echo "SKIP: audit-paths skill not found"
-fi
+}
 
-# Check recovery repo drift (Brewfile + repos.txt)
-echo ""
-echo "--- Recovery Repo Drift ---"
-RECOVERY="$HOME/Code/macos-recovery-setup"
-if [ -d "$RECOVERY" ]; then
-  # Brewfile: check for installed formulae/casks not in Brewfile
-  # Filter out auto-installed dependencies (only flag explicitly installed packages)
-  missing_formulae=$(comm -23 <(brew leaves 2>/dev/null | sort) <(grep '^brew ' "$RECOVERY/Brewfile" 2>/dev/null | sed 's/brew "//;s/"//' | sort))
-  missing_casks=$(comm -23 <(brew list --cask 2>/dev/null | sort) <(grep '^cask ' "$RECOVERY/Brewfile" 2>/dev/null | sed 's/cask "//;s/"//' | sort))
-  if [ -n "$missing_formulae" ] || [ -n "$missing_casks" ]; then
-    count_f=$(echo "$missing_formulae" | grep -c . 2>/dev/null || echo 0)
-    count_c=$(echo "$missing_casks" | grep -c . 2>/dev/null || echo 0)
-    echo "WARN: Brewfile drift — ${count_f} formula(e), ${count_c} cask(s) installed but not tracked"
-    [ -n "$missing_formulae" ] && echo "  formulae: $(echo $missing_formulae | tr '\n' ' ')"
-    [ -n "$missing_casks" ] && echo "  casks: $(echo $missing_casks | tr '\n' ' ')"
-  else
+check_brewfile_drift() {
+  local missing_formulae missing_casks count_f count_c
+  missing_formulae=$(comm -23 <(brew leaves 2>/dev/null | sort) \
+    <(grep '^brew ' "$RECOVERY/Brewfile" 2>/dev/null | sed 's/brew "//;s/"//' | sort))
+  missing_casks=$(comm -23 <(brew list --cask 2>/dev/null | sort) \
+    <(grep '^cask ' "$RECOVERY/Brewfile" 2>/dev/null | sed 's/cask "//;s/"//' | sort))
+  if [ -z "$missing_formulae" ] && [ -z "$missing_casks" ]; then
     echo "OK: Brewfile in sync"
+    return 0
   fi
+  count_f=$(echo "$missing_formulae" | grep -c . || true)
+  count_c=$(echo "$missing_casks" | grep -c . || true)
+  echo "WARN: Brewfile drift — ${count_f} formula(e), ${count_c} cask(s) installed but not tracked"
+  [ -n "$missing_formulae" ] && echo "  formulae: $(echo "$missing_formulae" | tr '\n' ' ')"
+  [ -n "$missing_casks" ] && echo "  casks: $(echo "$missing_casks" | tr '\n' ' ')"
+}
 
-  # repos.txt: check for repos not in manifest and vice versa
-  missing_repos=$(comm -23 <(ls -1d "$HOME"/Code/*/.git 2>/dev/null | xargs -I{} dirname {} | xargs -I{} basename {} | sort) <(grep ' -> ' "$RECOVERY/repos.txt" 2>/dev/null | grep -v '^#' | awk '{print $1}' | sort))
-  stale_repos=""
+check_repos_manifest() {
+  local tracked missing_repos="" stale_repos="" dir name
+  tracked=$(grep ' -> ' "$RECOVERY/repos.txt" 2>/dev/null | grep -v '^#' | awk '{print $1}')
+  for dir in "$HOME"/Code/*/; do
+    [ -d "$dir/.git" ] || continue
+    name=$(basename "$dir")
+    echo "$tracked" | grep -qFx "$name" || missing_repos="$missing_repos $name"
+  done
   while IFS= read -r name; do
     [ -z "$name" ] && continue
-    [ ! -d "$HOME/Code/$name" ] && stale_repos="$stale_repos $name"
-  done < <(grep ' -> ' "$RECOVERY/repos.txt" 2>/dev/null | grep -v '^#' | awk '{print $1}')
-  if [ -n "$missing_repos" ] || [ -n "$stale_repos" ]; then
-    echo "WARN: repos.txt drift"
-    [ -n "$missing_repos" ] && echo "  not tracked: $(echo $missing_repos | tr '\n' ' ')"
-    [ -n "$stale_repos" ] && echo "  stale (no longer exist):$stale_repos"
-  else
+    [ -d "$HOME/Code/$name" ] || stale_repos="$stale_repos $name"
+  done <<< "$tracked"
+  if [ -z "$missing_repos" ] && [ -z "$stale_repos" ]; then
     echo "OK: repos.txt in sync"
+    return 0
   fi
-else
-  echo "SKIP: Recovery repo not found at $RECOVERY"
-fi
+  echo "WARN: repos.txt drift"
+  [ -n "$missing_repos" ] && echo "  not tracked:$missing_repos"
+  [ -n "$stale_repos" ] && echo "  stale (no longer exist):$stale_repos"
+}
 
-# Check for large log files (>100MB)
-echo ""
-echo "--- Large Log Files ---"
-LARGE_LOGS=$(find "$HOME/Code" "$HOME/Jts" "$HOME/.claude" "$HOME/.hermes" "$HOME/.cache" -name "*.log" -size +100M 2>/dev/null)
-if [ -n "$LARGE_LOGS" ]; then
-  echo "$LARGE_LOGS" | while read -r logfile; do
+check_recovery_drift() {
+  echo ""
+  echo "--- Recovery Repo Drift ---"
+  if [ ! -d "$RECOVERY" ]; then
+    echo "SKIP: Recovery repo not found at $RECOVERY"
+    return 0
+  fi
+  check_brewfile_drift
+  check_repos_manifest
+}
+
+check_large_logs() {
+  echo ""
+  echo "--- Large Log Files ---"
+  local large_logs logfile size human
+  large_logs=$(find "$HOME/Code" "$HOME/Jts" "$HOME/.claude" "$HOME/.hermes" "$HOME/.cache" \
+    -name "*.log" -size +100M 2>/dev/null)
+  if [ -z "$large_logs" ]; then
+    echo "OK: No log files over 100MB"
+    return 0
+  fi
+  while IFS= read -r logfile; do
     size=$(stat -f%z "$logfile" 2>/dev/null || echo 0)
     human=$(echo "$size" | awk '{if ($1>=1073741824) printf "%.1fG",$1/1073741824; else printf "%.0fM",$1/1048576}')
     echo "WARN: $logfile ($human)"
-  done
-else
-  echo "OK: No log files over 100MB"
-fi
+  done <<< "$large_logs"
+}
 
-# Check Claude config sync
-echo ""
-echo "--- Claude Config Sync ---"
-RECOVERY="$HOME/Code/macos-recovery-setup"
-if [ -d "$RECOVERY/claude" ]; then
-  # Check LaunchAgent is loaded
+check_config_sync() {
+  echo ""
+  echo "--- Claude Config Sync ---"
+  local live_hooks repo_hooks live_cmds repo_cmds
+  if [ ! -d "$RECOVERY/claude" ]; then
+    echo "SKIP: No claude/ dir in recovery repo"
+    return 0
+  fi
   if launchctl list "com.hsp.sync-claude-config" &>/dev/null; then
     echo "OK: sync-claude-config agent loaded"
   else
     echo "FAIL: sync-claude-config agent not loaded"
   fi
-
-  # Check settings.json drift
   if [ -f "$RECOVERY/claude/settings.json" ] && [ -f "$HOME/.claude/settings.json" ]; then
     if diff -q "$RECOVERY/claude/settings.json" "$HOME/.claude/settings.json" &>/dev/null; then
       echo "OK: settings.json in sync"
@@ -148,8 +203,6 @@ if [ -d "$RECOVERY/claude" ]; then
       echo "WARN: settings.json has drifted (recovery repo != live)"
     fi
   fi
-
-  # Check hooks drift (count mismatch)
   live_hooks=$(find "$HOME/.claude/hooks" -name "*.sh" 2>/dev/null | wc -l | tr -d ' ')
   repo_hooks=$(find "$RECOVERY/claude/hooks" -name "*.sh" 2>/dev/null | wc -l | tr -d ' ')
   if [ "$live_hooks" -ne "$repo_hooks" ]; then
@@ -157,8 +210,6 @@ if [ -d "$RECOVERY/claude" ]; then
   else
     echo "OK: hooks in sync ($live_hooks scripts)"
   fi
-
-  # Check commands drift
   live_cmds=$(find "$HOME/.claude/commands" -name "*.md" 2>/dev/null | wc -l | tr -d ' ')
   repo_cmds=$(find "$RECOVERY/claude/commands" -name "*.md" 2>/dev/null | wc -l | tr -d ' ')
   if [ "$live_cmds" -ne "$repo_cmds" ]; then
@@ -166,9 +217,44 @@ if [ -d "$RECOVERY/claude" ]; then
   else
     echo "OK: commands in sync ($live_cmds files)"
   fi
-else
-  echo "SKIP: No claude/ dir in recovery repo"
-fi
+}
+
+check_ioc_freshness() {
+  echo ""
+  echo "--- Security IOC Lists ---"
+  # Both security skills date their IOC files in the filename. A list older than 90 days
+  # means the IOC category of that skill is unverified, and nothing else surfaces that daily.
+  # Only the newest file per prefix counts: a refresh adds a new dated file and the
+  # scripts pick the newest by name, so a superseded list must not keep warning.
+  local skill prefix newest date age found=0
+  for skill in diagnose threat-hunt; do
+    for prefix in $(ls "$SKILLS/$skill/references"/ioc_*.txt 2>/dev/null | sed -E 's/_[0-9]{4}-[0-9]{2}-[0-9]{2}\.txt$//' | sort -u); do
+      newest=$(ls "${prefix}"_*.txt 2>/dev/null | sort | tail -1)
+      [ -f "$newest" ] || continue
+      found=1
+      date=$(basename "$newest" | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}')
+      [ -n "$date" ] || continue
+      age=$(( ($(date +%s) - $(date -j -f "%Y-%m-%d" "$date" +%s 2>/dev/null || date +%s)) / 86400 ))
+      if [ "$age" -ge 90 ]; then
+        echo "WARN: $skill/$(basename "$newest") is ${age} days old (refresh IOCs)"
+      else
+        echo "OK: $skill/$(basename "$newest") (${age} days old)"
+      fi
+    done
+  done
+  [ "$found" -eq 0 ] && echo "SKIP: no IOC lists found"
+}
+
+check_launchagents
+check_git_repos
+check_vault
+check_habits
+check_paths
+check_recovery_drift
+check_large_logs
+check_config_sync
+check_ioc_freshness
 
 echo ""
 echo "=== Done ==="
+exit 0

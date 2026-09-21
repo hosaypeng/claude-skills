@@ -5,8 +5,10 @@ set -e
 # Usage: bash audit_paths.sh [memory|launchagents|all]
 
 MODE="${1:-all}"
-VAULT="${HOME}/Library/Mobile Documents/iCloud~md~obsidian/Documents"
-PROJECT_MEMORY="${HOME}/.claude/projects/-Users-hsp-Library-Mobile-Documents-iCloud-md-obsidian-Documents/memory"
+# The vault moved from iCloud to ~/Documents/obsidian; the old paths made this scan
+# silently cover only ~/.claude/CLAUDE.md while reporting "All paths valid".
+VAULT="${HOME}/Documents/obsidian"
+PROJECT_MEMORY="${HOME}/.claude/projects/-Users-hsp-Documents-obsidian/memory"
 LAUNCH_AGENTS="${HOME}/Library/LaunchAgents"
 
 TMPFILE=$(mktemp)

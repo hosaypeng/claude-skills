@@ -54,7 +54,8 @@ unencrypted=0
 for key in ~/.ssh/id_*; do
   [ -f "$key" ] || continue
   case "$key" in *.pub) continue ;; esac
-  if ! grep -q "ENCRYPTED" "$key" 2>/dev/null; then
+  # OpenSSH-format keys never contain "ENCRYPTED"; only an empty-passphrase load proves it.
+  if ssh-keygen -y -P '' -f "$key" >/dev/null 2>&1; then
     echo "[HIGH] Unencrypted private key: $key"
     unencrypted=$((unencrypted + 1))
   fi

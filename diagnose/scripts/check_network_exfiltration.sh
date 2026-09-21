@@ -17,12 +17,15 @@ echo "=== Connections on Non-Standard Ports ==="
 # The previous filter matched process names against "Google|Apple|Cloudflare", which any
 # malware can defeat by naming itself. Filtering by well-known port plus RFC1918 range
 # describes the traffic instead of trusting the label on it.
+# Filter on the REMOTE endpoint only: grepping the whole "name pid local->remote" string
+# matched the local 192.168.x.x address against the RFC1918 exclusion and dropped every
+# IPv4 connection, so this section printed "None" on every run.
 if [ -n "$established" ]; then
-  non_standard=$(echo "$established" | awk '{print $1, $2, $9}' \
-    | grep -vE ':(80|443|993|587|465|143|53|22|5228|5223)$' \
-    | grep -vE '127\.0\.0\.1|::1|10\.[0-9]|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.' \
-    | grep -vE '\[fe80:' \
-    | sort -u)
+  non_standard=$(echo "$established" | awk '{
+      r = $9; sub(/.*->/, "", r)
+      if (r ~ /:(80|443|993|587|465|143|53|22|5228|5223)$/) next
+      if (r ~ /^(127\.0\.0\.1|\[::1\]|10\.|172\.(1[6-9]|2[0-9]|3[01])\.|192\.168\.|\[fe80:)/) next
+      print $1, $2, $9 }' | sort -u)
   if [ -n "$non_standard" ]; then
     echo "$non_standard" | sed 's/^/  [MEDIUM] /'
   else

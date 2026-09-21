@@ -16,7 +16,7 @@ while IFS= read -r f; do
     fi
     found=1
   fi
-done < <(find /tmp /var/tmp -maxdepth 3 -type f 2>/dev/null)
+done < <(find -H /tmp /var/tmp -maxdepth 3 -type f 2>/dev/null)   # -H: /tmp is a symlink
 [ "$found" -eq 0 ] && echo "  None found (good)"
 
 echo "=== Unsigned Loadable Code in /private/var/folders ==="
@@ -28,7 +28,7 @@ done < <(find /private/var/folders -maxdepth 5 -type f \
 [ "$found" -eq 0 ] && echo "  None found or not readable"
 
 echo "=== Executable Files in /tmp ==="
-execs=$(find /tmp -maxdepth 3 -type f -perm +111 2>/dev/null | head -20)
+execs=$(find -H /tmp -maxdepth 3 -type f -perm +111 2>/dev/null | head -20)
 if [ -n "$execs" ]; then
   echo "$execs" | while IFS= read -r f; do
     echo "  $f ($(file -b "$f" 2>/dev/null | cut -c1-50))"

@@ -1,8 +1,12 @@
 #!/bin/bash
-set -e
+# Probe script: try each check, print what works, never abort on a failed sub-check.
 
 # scan_clipboard_exfil.sh — Check clipboard for secrets and clipboard manager exposure
 # SAFETY: Never prints actual secret values
+
+# BIP39 shape: exactly 12/15/18/21/24 words of 3-8 lowercase letters (same as scan_crypto_wallets.sh).
+W='[a-z]{3,8}'
+SEED_PATTERN="^($W ){11}$W\$|^($W ){14}$W\$|^($W ){17}$W\$|^($W ){20}$W\$|^($W ){23}$W\$"
 
 echo "=== Current Clipboard Analysis ==="
 clipboard=$(pbpaste 2>/dev/null || true)
@@ -12,7 +16,7 @@ if [ -n "$clipboard" ]; then
     echo "  [MEDIUM] Clipboard contains potential API key pattern"
   elif echo "$clipboard" | grep -q -- '-----BEGIN.*PRIVATE KEY-----'; then
     echo "  [CRITICAL] Clipboard contains a private key"
-  elif echo "$clipboard" | grep -qE '^([a-z]+ ){11,}[a-z]+$'; then
+  elif echo "$clipboard" | grep -qE "$SEED_PATTERN"; then
     echo "  [CRITICAL] Clipboard contains potential seed phrase"
   elif echo "$clipboard" | grep -qE '0x[a-fA-F0-9]{64}'; then
     echo "  [CRITICAL] Clipboard contains potential crypto private key"
@@ -36,9 +40,14 @@ else
 fi
 
 echo "=== Clipboard Manager Data Files ==="
-for clip_dir in "/Users/$USER/Library/Application Support/CopyQ" "/Users/$USER/Library/Application Support/Maccy" "/Users/$USER/Library/Containers/com.sindresorhus.Paste/Data"; do
+clip_found=0
+for clip_dir in "$HOME/Library/Application Support/CopyQ" "$HOME/Library/Application Support/Maccy" "$HOME/Library/Containers/com.sindresorhus.Paste/Data" "$HOME/Library/Application Support/com.raycast.macos"; do
   if [ -d "$clip_dir" ]; then
     echo "  [INFO] Clipboard history at: $clip_dir"
     echo "    Consider periodically clearing clipboard history"
+    clip_found=1
   fi
 done
+[ "$clip_found" -eq 0 ] && echo "  None"
+
+exit 0

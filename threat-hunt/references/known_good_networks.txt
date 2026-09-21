@@ -1,6 +1,8 @@
 # Known Good Network Ranges
 # Format: CIDR|OWNER
-# Used by scan_network_anomalies.sh to filter out legitimate connections
+# Used by _lib.sh ip_owner() to ANNOTATE remote IPs in scan_network_anomalies.sh and
+# scan_network_processes.sh. Annotation only: a hit never suppresses a finding, since C2
+# hosted on AWS, Azure or Cloudflare is routine. IPv6 ranges are listed but not matched.
 # Last Updated: 2025-03-15
 #
 # Apple

@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+# Probe script: try each check, print what works, never abort on a failed sub-check.
 
 # check_sip_amfi.sh — Check System Integrity Protection and Apple Mobile File Integrity
 
@@ -13,3 +13,5 @@ if [ -n "$amfi" ]; then
 else
   echo "  AMFI: enabled (default, no override found)"
 fi
+
+exit 0

@@ -1,7 +1,6 @@
 #!/bin/bash
-set -e
-
 # verify_hardening.sh — Verify physical-security mitigations and system hardening
+# Probe script: try each check, print what works, never abort on a failed sub-check.
 
 echo "=== FileVault Status ==="
 fv_status=$(fdesetup status 2>/dev/null || echo "Could not determine")
@@ -19,18 +18,24 @@ else
   echo "  [HIGH] Enable via System Settings > Privacy & Security > Lockdown Mode"
 fi
 
-echo "=== USB Restricted Mode ==="
-usb_mode=$(defaults read /Library/Preferences/com.apple.security.accessory USBRestrictedMode 2>/dev/null || echo "not set")
-echo "  USB Restricted Mode: $usb_mode"
-if [ "$usb_mode" = "not set" ] || [ "$usb_mode" = "0" ]; then
-  echo "  [MEDIUM] USB Restricted Mode not confirmed — check System Settings > Privacy & Security > Accessories"
+echo "=== USB Restricted Mode (Accessories) ==="
+# macOS 13+ on Apple Silicon defaults to "Ask for new accessories". No preference domain
+# exposes the setting on macOS 27 (com.apple.security.accessory does not exist), so an
+# absent key is the default and not a finding; it cannot be verified from the shell.
+usb_mode=$(defaults read /Library/Preferences/com.apple.security.accessory USBRestrictedMode 2>/dev/null)
+if [ -z "$usb_mode" ]; then
+  echo "  not set (macOS default: Ask for new accessories)"
+  echo "  [INFO] Not verifiable from the shell — confirm in System Settings > Privacy & Security > Accessories"
+elif [ "$usb_mode" = "0" ]; then
+  echo "  [MEDIUM] USB Restricted Mode explicitly disabled (accessories always allowed)"
+else
+  echo "  USBRestrictedMode: $usb_mode"
 fi
 
 echo "=== Firmware Password / Activation Lock ==="
-arch=$(uname -m)
-if [ "$arch" = "arm64" ]; then
-  echo "  Apple Silicon detected — uses Activation Lock (cannot check programmatically)"
-  echo "  [INFO] Verify Activation Lock is enabled via System Settings > Apple ID > Find My"
+if [ "$(uname -m)" = "arm64" ]; then
+  echo "  Apple Silicon — Secure Boot policy and Activation Lock replace the firmware password"
+  echo "  [INFO] Verify Activation Lock is on: System Settings > Apple Account > Find My"
 else
   fw_status=$(firmwarepasswd -check 2>/dev/null || echo "Could not determine (may require admin)")
   echo "  $fw_status"
@@ -51,22 +56,37 @@ if echo "$gk" | grep -qi "disabled"; then
 fi
 
 echo "=== Automatic Updates ==="
-auto_check=$(defaults read /Library/Preferences/com.apple.SoftwareUpdate AutomaticCheckEnabled 2>/dev/null || echo "unknown")
-auto_download=$(defaults read /Library/Preferences/com.apple.SoftwareUpdate AutomaticDownload 2>/dev/null || echo "unknown")
-critical_install=$(defaults read /Library/Preferences/com.apple.SoftwareUpdate CriticalUpdateInstall 2>/dev/null || echo "unknown")
-echo "  AutomaticCheck: $auto_check | AutomaticDownload: $auto_download | CriticalUpdateInstall: $critical_install"
-if [ "$auto_check" = "0" ] || [ "$critical_install" = "0" ]; then
-  echo "  [MEDIUM] Automatic updates are not fully enabled"
-fi
+# macOS 27 does not write these keys until the user toggles them, and an absent key means
+# the default (enabled). Only a key that is present AND 0 is a finding.
+read_su_key() {
+  local key="$1" tag="$2" val
+  val=$(defaults read /Library/Preferences/com.apple.SoftwareUpdate "$key" 2>/dev/null)
+  if [ -z "$val" ]; then
+    echo "  $key: not set (macOS default: enabled)"
+  elif [ "$val" = "0" ]; then
+    echo "  ${tag}$key: 0 (explicitly disabled)"
+  else
+    echo "  $key: $val"
+  fi
+}
+read_su_key AutomaticCheckEnabled "[MEDIUM] "
+read_su_key AutomaticDownload ""
+read_su_key CriticalUpdateInstall "[MEDIUM] "
+read_su_key ConfigDataInstall ""
 
 echo "=== Find My Mac ==="
-fmm=$(nvram -p 2>/dev/null | grep "fmm-mobileme-token" || true)
-if [ -n "$fmm" ]; then
-  echo "  Find My Mac: appears enabled"
+# The fmm-mobileme-token NVRAM variable is an Intel-era artifact and is absent on Apple
+# Silicon even with Find My on, so its absence was a guaranteed false LOW. What can be
+# observed is whether the Find My daemons are alive; the setting itself needs the UI.
+if pgrep -x findmydeviced >/dev/null 2>&1 && pgrep -x searchpartyd >/dev/null 2>&1; then
+  echo "  findmydeviced and searchpartyd running (consistent with Find My on)"
 else
-  echo "  Find My Mac: token not found"
-  echo "  [LOW] Find My Mac may be disabled"
+  echo "  Find My daemons not running"
 fi
+if nvram -p 2>/dev/null | grep -q "fmm-mobileme-token"; then
+  echo "  NVRAM Find My token present"
+fi
+echo "  [INFO] Confirm in System Settings > Apple Account > iCloud > Find My Mac"
 
 echo "=== Screen Lock ==="
 ask_pw=$(defaults read com.apple.screensaver askForPassword 2>/dev/null || echo "unknown")
@@ -74,10 +94,12 @@ ask_delay=$(defaults read com.apple.screensaver askForPasswordDelay 2>/dev/null 
 echo "  askForPassword: $ask_pw | askForPasswordDelay: $ask_delay"
 if [ "$ask_pw" = "0" ]; then
   echo "  [HIGH] Screen lock password not required"
-elif [ "$ask_delay" != "unknown" ] && [[ "$ask_delay" =~ ^[0-9]+$ ]] && [ "$ask_delay" -gt 5 ]; then
+elif [[ "$ask_delay" =~ ^[0-9]+$ ]] && [ "$ask_delay" -gt 5 ]; then
   echo "  [LOW] Screen lock delay is $ask_delay seconds"
 fi
 
 echo "=== MVT Recommendation ==="
 echo "  [INFO] For iOS-specific Pegasus detection, install MVT: pip3 install mvt"
-echo "  [INFO] Run: mvt-ios check-backup --indicators pegasus.stix2 <backup_path>"
+echo "  [INFO] Run: mvt-ios check-backup --iocs pegasus.stix2 <backup_path>"
+
+exit 0
