@@ -16,7 +16,7 @@ symlinked to `~/.local/bin/audit-icloud`). This skill is a thin client: it runs 
 presents the result, so what Claude does and what the user does at a prompt share one code path.
 
 ```
-audit-icloud [report] [-s|--summary]
+audit-icloud [report] [-f|--full]
 audit-icloud clean [-n|--dry-run] [-y|--yes]
 audit-icloud help
 ```
@@ -29,8 +29,8 @@ reimplement any of it here.
 
 | Argument | Command |
 |----------|---------|
-| *(none)* / `full` | `audit-icloud` |
-| `summary` | `audit-icloud --summary` |
+| *(none)* / `summary` | `audit-icloud` |
+| `full` | `audit-icloud --full` |
 | `clean` | `audit-icloud clean --dry-run`, present the list, **ask the user**, then `audit-icloud clean --yes` |
 
 Without `--yes` the `clean` command waits on a confirmation prompt that this non-interactive
@@ -38,16 +38,14 @@ shell cannot answer, so the confirmation happens in chat instead: dry-run → sh
 
 ## What the CLI reports
 
-1. **Header** — `<n> files · <size> · <used> of <all> containers in use · <n> artifacts (<size>)`.
-2. **Artifacts** — one row per item: `<size>  <file|dir>  <path relative to the mirror>` for
-   `.DS_Store`, `Thumbs.db`, `*.tmp`, `._*`, and the directories `.Spotlight-*`, `.Trashes`,
-   `__MACOSX`, `.fseventsd`, `.TemporaryItems`. `Artifacts  none` when clean.
-3. **Containers** — overview sorted by size: `<size>  <n> files  <App name>  <container id> — <note>`.
-   Notes: `encrypted, never modify` (WhatsApp), `audited separately` (the Obsidian container),
-   `<n> not downloaded` (`.icloud` placeholders, counted but never sized). Empty containers are
-   summarised in one line.
-4. **Per-container sections** (`full` only) — `<App name>  <container id>  ·  <n> files, <size>`
-   then `<size>  <path>` rows (≤50 files) or `<size>  <n> files  <top-level item>` rows grouped and
+1. **Container table** sorted by size — `App | Container | Files | Size | Note`, with a Total
+   row. Notes: `encrypted, never modify` (WhatsApp), `audited separately` (the Obsidian
+   container), `<n> not downloaded` (`.icloud` placeholders, counted but never sized).
+2. **Artifact table** — `Size | Kind | Path` (relative to the mirror) for `.DS_Store`,
+   `Thumbs.db`, `*.tmp`, `._*`, and the directories `.Spotlight-*`, `.Trashes`, `__MACOSX`,
+   `.fseventsd`, `.TemporaryItems`. `Artifacts  none` when clean.
+3. **Per-container sections** (`full` only) — `<App>  <container id>  ·  <n> files, <size>` then
+   `<size>  <path>` rows (≤50 files) or `<size>  <n> files  <top-level item>` rows grouped and
    sorted by size. WhatsApp and the Obsidian container have no section. Output is never
    truncated when piped, so you see full paths.
 
@@ -70,6 +68,6 @@ For `clean`, after the real run show the moved items and their restore lines.
 ## Troubleshooting
 
 - **Permission denied**: iCloud Drive may be syncing. Wait and retry.
-- **Output too large**: use `summary`.
+- **Output too large**: drop `full`; the default is the tables only.
 - **Missing containers**: some containers only appear after their app has been opened once.
 - **Restoring something**: paste the `restore: mv -n …` line the CLI printed.
