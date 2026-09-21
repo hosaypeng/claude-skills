@@ -4,19 +4,20 @@ set -e
 # Session Artifact Cleanup
 # Removes Claude session artifacts, debug logs, stale caches, and temp files.
 
+export CLEANUP_MODE=session
 source "$(dirname "$0")/_helpers.sh"
 
 HOME_DIR="$HOME"
-LOG_FILE="$HOME_DIR/.claude/cleanup-log.txt"
 
 echo "=== Session Artifact Cleanup ==="
 echo ""
+start_run
 
 # 1. Scratchpad directories under /private/tmp/claude-*
 # IMPORTANT: Skip the current session's temp dir (/private/tmp/claude-<UID>/)
 # because Claude Code uses it for Bash tool output capture and task files.
 # Moving it mid-execution destroys all stdout from the running command.
-echo "--- Scratchpad Directories ---"
+section "Scratchpad Directories"
 SCRATCHPAD_BASE="/private/tmp"
 CURRENT_CLAUDE_TMP="$SCRATCHPAD_BASE/claude-$(id -u)"
 if ls -d "$SCRATCHPAD_BASE"/claude-* 1>/dev/null 2>&1; then
@@ -47,7 +48,7 @@ fi
 echo ""
 
 # 2. Claude debug logs (older than 7 days)
-echo "--- Debug Logs ---"
+section "Debug Logs"
 DEBUG_DIR="$HOME_DIR/.claude/debug"
 if [ -d "$DEBUG_DIR" ]; then
   OLD_COUNT=0
@@ -62,7 +63,7 @@ fi
 echo ""
 
 # 3. Claude desktop app cache
-echo "--- Claude Desktop Cache ---"
+section "Claude Desktop Cache"
 CLAUDE_CACHE="$HOME_DIR/Library/Application Support/Claude/Cache"
 if [ -d "$CLAUDE_CACHE" ]; then
   size=$(safe_size "$CLAUDE_CACHE")
@@ -74,17 +75,18 @@ fi
 echo ""
 
 # 4. Old Claude VM bundles (keep only the latest)
-echo "--- Claude VM Bundles ---"
+section "Claude VM Bundles"
 VM_DIR="$HOME_DIR/Library/Application Support/Claude/vm_bundles"
 if [ -d "$VM_DIR" ]; then
-  BUNDLE_COUNT=$(find "$VM_DIR" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
+  # Only *.bundle dirs are VM images; warm/ is a staging dir the app manages.
+  BUNDLE_COUNT=$(find "$VM_DIR" -maxdepth 1 -mindepth 1 -type d -name "*.bundle" 2>/dev/null | wc -l | tr -d ' ')
   if [ "$BUNDLE_COUNT" -gt 1 ]; then
     total_size=$(safe_size "$VM_DIR")
     echo "  Found $BUNDLE_COUNT VM bundles ($(format_size "$total_size") total)"
     # Keep only the newest bundle, trash the rest
-    LATEST=$(find "$VM_DIR" -maxdepth 1 -mindepth 1 -type d -print0 2>/dev/null | xargs -0 ls -dt | head -1)
+    LATEST=$(find "$VM_DIR" -maxdepth 1 -mindepth 1 -type d -name "*.bundle" -print0 2>/dev/null | xargs -0 ls -dt | head -1)
     echo "  Keeping latest: $(basename "$LATEST")"
-    for bundle in "$VM_DIR"/*/; do
+    for bundle in "$VM_DIR"/*.bundle/; do
       [ -d "$bundle" ] || continue
       [ "$bundle" = "$LATEST/" ] && continue
       safe_trash "$bundle"
@@ -98,7 +100,7 @@ fi
 echo ""
 
 # 5. Stale project caches (dead paths or inactive >30 days)
-echo "--- Stale Project Caches ---"
+section "Stale Project Caches"
 PROJECTS_DIR="$HOME_DIR/.claude/projects"
 if [ -d "$PROJECTS_DIR" ]; then
   STALE_COUNT=0
@@ -169,7 +171,7 @@ fi
 echo ""
 
 # 6. Claude backups (older than 30 days)
-echo "--- Old Backups ---"
+section "Old Backups"
 BACKUPS_DIR="$HOME_DIR/.claude/backups"
 if [ -d "$BACKUPS_DIR" ]; then
   OLD_COUNT=0
@@ -184,7 +186,7 @@ fi
 echo ""
 
 # 7. File history and paste/image caches (older than 30 days)
-echo "--- Session Caches ---"
+section "Session Caches"
 for cache_name in "file-history" "image-cache" "paste-cache"; do
   CACHE_PATH="$HOME_DIR/.claude/$cache_name"
   if [ -d "$CACHE_PATH" ]; then
@@ -201,7 +203,7 @@ echo ""
 # 8. Orphaned Claude processes (detect only)
 # Exclude this script's own ancestry — the running session is not an orphan, and
 # listing it every time trains you to ignore the section.
-echo "--- Orphaned Processes ---"
+section "Orphaned Processes"
 SELF_PIDS=""
 probe=$$
 while [ -n "$probe" ] && [ "$probe" -gt 1 ] 2>/dev/null; do
@@ -229,7 +231,7 @@ fi
 echo ""
 
 # 9. Stale lock files
-echo "--- Stale Lock Files ---"
+section "Stale Lock Files"
 LOCK_COUNT=0
 for lockfile in /tmp/claude-*.lock /tmp/claude-*.tmp; do
   if [ -f "$lockfile" ]; then
@@ -241,7 +243,7 @@ done
 echo ""
 
 # 10. Temporary downloads
-echo "--- Temporary Downloads ---"
+section "Temporary Downloads"
 TEMP_COUNT=0
 for pattern in "$HOME_DIR/Downloads"/*.tmp "$HOME_DIR/Downloads"/*.crdownload "$HOME_DIR/Downloads"/*.part; do
   if [ -f "$pattern" ]; then
@@ -254,21 +256,11 @@ echo ""
 
 # Summary
 echo "=== Session Cleanup Complete ==="
-echo "Space recovered: approximately $(format_size $TOTAL_FREED)"
+echo "$([ "$DRY_RUN" = 1 ] && echo "Would recover" || echo "Space recovered"): approximately $(format_size "$TOTAL_FREED")"
 if [ "$TOTAL_FAILED" -gt 0 ]; then
   echo "Failed to trash: $TOTAL_FAILED item(s) — see errors above"
 fi
 
-# Log
-mkdir -p "$(dirname "$LOG_FILE")"
-cat >> "$LOG_FILE" <<LOGEOF
-========================================
-Session Cleanup: $(date '+%Y-%m-%d %H:%M:%S')
-========================================
-Space Recovered: $(format_size $TOTAL_FREED)
-Status: Success
-========================================
+echo "Per-item log: $OPLOG"
 
-LOGEOF
-
-echo "Log appended to $LOG_FILE"
+finish_run

@@ -5,17 +5,18 @@ set -e
 # Scans and removes artifacts left behind by uninstalled apps: quarantine events,
 # app usage history, saved states, orphaned preferences, and more.
 
+export CLEANUP_MODE=forensic
 source "$(dirname "$0")/_helpers.sh"
 
 HOME_DIR="$HOME"
-LOG_FILE="$HOME_DIR/.claude/purge-artifacts-log.txt"
 INSTALLED_IDS=$(mktemp)
 
 echo "=== Forensic Trace Cleanup ==="
 echo ""
+start_run
 
 # Phase 1: Build installed apps index
-echo "--- Building Installed Apps Index ---"
+section "Building Installed Apps Index"
 INSTALLED_NAMES=$(mktemp)
 trap 'rm -f "$INSTALLED_IDS" "$INSTALLED_NAMES"' EXIT
 for app in /Applications/*.app "$HOME_DIR/Applications"/*.app /System/Applications/*.app; do
@@ -115,7 +116,7 @@ matches_installed_app() {
 }
 
 # === Category A: Execution & Download History ===
-echo "--- Category A: Execution & Download History ---"
+section "Category A: Execution & Download History"
 
 # Quarantine Events (report only — clearing weakens Gatekeeper security)
 QE_DB="$HOME_DIR/Library/Preferences/com.apple.LaunchServices.QuarantineEventsV2"
@@ -190,7 +191,7 @@ echo ""
 # WhatsApp, Zoom, Shortcuts) whose container IDs do not resemble their bundle
 # IDs, and it cannot see CLI tools, which own no .app bundle at all. Everything
 # below is listed for review and deleted manually via Finder.
-echo "--- Category B: Orphaned App Data (report only) ---"
+section "Category B: Orphaned App Data (report only)"
 
 # Saved Application State (orphans)
 SAS_DIR="$HOME_DIR/Library/Saved Application State"
@@ -222,11 +223,12 @@ if [ -d "$CONT_DIR" ]; then
     [[ "$bundle_id" =~ ^[A-F0-9]{8}- ]] && continue
     is_recently_modified "$container" 30 && continue
     if ! matches_installed_app "$(normalize_bundle_id "$bundle_id")"; then
+      report_candidate "${container%/}"
       ORPHAN_COUNT=$((ORPHAN_COUNT + 1))
     fi
   done
   if [ "$ORPHAN_COUNT" -gt 0 ]; then
-    echo "Orphaned Containers: $ORPHAN_COUNT found (SIP-protected — delete via Finder if needed)"
+    echo "Orphaned Containers: $ORPHAN_COUNT candidate(s) (SIP-protected — delete via Finder if needed)"
   else
     echo "Orphaned Containers: none"
   fi
@@ -373,7 +375,7 @@ fi
 
 # Orphaned Preferences (plist files)
 echo ""
-echo "--- Category B2: Orphaned Preferences ---"
+section "Category B2: Orphaned Preferences"
 PREF_DIR="$HOME_DIR/Library/Preferences"
 if [ -d "$PREF_DIR" ]; then
   ORPHAN_COUNT=0
@@ -418,7 +420,7 @@ fi
 echo ""
 
 # Orphaned Application Scripts
-echo "--- Category B3: Orphaned Application Scripts ---"
+section "Category B3: Orphaned Application Scripts"
 ASCRIPT_DIR="$HOME_DIR/Library/Application Scripts"
 if [ -d "$ASCRIPT_DIR" ]; then
   ORPHAN_COUNT=0
@@ -441,7 +443,7 @@ fi
 echo ""
 
 # Orphaned Caches (cross-reference against installed apps)
-echo "--- Category B4: Orphaned Caches ---"
+section "Category B4: Orphaned Caches"
 OCACHE_DIR="$HOME_DIR/Library/Caches"
 if [ -d "$OCACHE_DIR" ]; then
   ORPHAN_COUNT=0
@@ -473,7 +475,7 @@ fi
 echo ""
 
 # === Category C: Background Services ===
-echo "--- Category C: Background Services ---"
+section "Category C: Background Services"
 
 # Orphaned LaunchAgents (user)
 LA_DIR="$HOME_DIR/Library/LaunchAgents"
@@ -484,7 +486,7 @@ if [ -d "$LA_DIR" ]; then
     prog=$(/usr/libexec/PlistBuddy -c "Print ProgramArguments:0" "$plist" 2>/dev/null || /usr/libexec/PlistBuddy -c "Print Program" "$plist" 2>/dev/null || echo "")
     if [ -n "$prog" ] && [ ! -e "$prog" ]; then
       echo "  Orphaned LaunchAgent: $(basename "$plist") -> $prog"
-      launchctl bootout "gui/$(id -u)" "$plist" 2>/dev/null || true
+      [ "$DRY_RUN" = 1 ] || launchctl bootout "gui/$(id -u)" "$plist" 2>/dev/null || true
       safe_trash "$plist"
       ORPHAN_COUNT=$((ORPHAN_COUNT + 1))
     fi
@@ -518,7 +520,7 @@ fi
 echo ""
 
 # === Category D: Logs & Crash Reports ===
-echo "--- Category D: Logs & Crash Reports ---"
+section "Category D: Logs & Crash Reports"
 
 # Crash reports
 DR_DIR="$HOME_DIR/Library/Logs/DiagnosticReports"
@@ -542,7 +544,7 @@ fi
 echo ""
 
 # === Category E: Privacy Traces ===
-echo "--- Category E: Privacy Traces ---"
+section "Category E: Privacy Traces"
 
 # Siri Suggestions
 SIRI_DIR="$HOME_DIR/Library/Application Support/com.apple.siri.suggestions"
@@ -557,7 +559,7 @@ echo ""
 
 # Summary
 echo "=== Forensic Trace Cleanup Complete ==="
-echo "Space recovered: approximately $(format_size $TOTAL_FREED) (moved to Trash)"
+echo "$([ "$DRY_RUN" = 1 ] && echo "Would recover" || echo "Space recovered"): approximately $(format_size "$TOTAL_FREED") (moved to Trash)"
 if [ "$REPORTED_COUNT" -gt 0 ]; then
   echo "Orphan candidates: $REPORTED_COUNT item(s), $(format_size $TOTAL_REPORTED) — NOT deleted"
   echo "  Review the list above and delete via Finder if you agree. Orphan"
@@ -572,20 +574,6 @@ echo "NOTE: Some items (KnowledgeC, TCC database) may require manual deletion"
 echo "via Finder due to macOS security protections. Never grant Full Disk Access"
 echo "to Terminal for this purpose."
 
-# Log
-mkdir -p "$(dirname "$LOG_FILE")"
-cat >> "$LOG_FILE" <<LOGEOF
-========================================
-Forensic Cleanup: $(date '+%Y-%m-%d %H:%M:%S')
-========================================
-Space Recovered: $(format_size $TOTAL_FREED)
-Categories: Quarantine events, app usage history, orphaned data,
-  preferences, application scripts, caches, background services,
-  crash reports, privacy traces
-Status: Success
-========================================
+echo "Per-item log: $OPLOG"
 
-LOGEOF
-
-echo ""
-echo "Log appended to $LOG_FILE"
+finish_run

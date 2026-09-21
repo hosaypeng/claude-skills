@@ -1,0 +1,171 @@
+# Protected paths — /cleanup never trashes anything matching these.
+#
+# One shell glob per line, matched against the FULL expanded path. `~` expands
+# to $HOME. `#` starts a comment. Bracket classes work: *[Ss]lack* matches both
+# casings.
+#
+# This is a hard stop: unlike the whitelist it cannot be overridden per run,
+# and dry-run reports matches as SKIPPED (protected). Categories follow Mole's
+# app_protection_data.sh, trimmed to what matters on this machine. Add a
+# pattern here when an app keeps auth state, keys, or irreplaceable data in a
+# directory that looks like a cache.
+#
+# Scope deliberately: system mode cleans Electron `Cache`/`Code Cache` leaves
+# under ~/Library/Application Support for idle apps (Slack, Discord, Zoom), so
+# messaging patterns are limited to ~/Library/Caches and container roots where
+# auth tokens actually live. ~/.codex and ~/.cursor are on the regenerable
+# dotdir list in cleanup_system.sh and are intentionally not protected.
+
+# --- Apple hard safety (removal breaks search, fonts, iCloud, or Vision/OCR) ---
+*/com.apple.FontRegistry*
+*/com.apple.[Ss]potlight*
+*/CloudKit*
+*/com.apple.e5rt.e5bundlecache
+*/com.apple.e5rt.e5bundlecache/*
+*/com.apple.finder
+*/com.apple.finder.*
+*/com.apple.dock
+*/com.apple.dock.*
+*/com.apple.sharedfilelist/*
+*/com.apple.Settings*
+*/com.apple.systempreferences*
+*/com.apple.Notes*
+~/Library/Keychains*
+~/Library/Accounts*
+~/Library/Mail
+~/Library/Mail/*
+~/Library/Calendars*
+~/Library/Contacts*
+~/Library/Mobile Documents*
+~/Library/CloudStorage*
+~/Library/Autosave Information*
+~/Library/Application Support/Knowledge*
+~/Library/Application Support/MobileSync*
+~/Library/Application Support/Apple*
+~/Library/Application Support/com.apple.*
+
+# --- Input methods (deleting caches wipes user dictionaries) ---
+*[Ii]nput[Mm]ethod*
+*[Ss]ogou*
+*TextInput*
+
+# --- Password managers ---
+*1[Pp]assword*
+*agilebits*
+*[Bb]itwarden*
+*[Ll]ast[Pp]ass*
+*[Dd]ashlane*
+*[Kk]ee[Pp]ass*
+*[Aa]uthy*
+*[Yy]ubico*
+
+# --- Proxy / VPN clients (config and session state live beside caches) ---
+*nssurge*
+*[Ss]urge*
+*[Cc]lash*
+*mihomo*
+*[Vv]2ray*
+*sing-box*
+*[Tt]ailscale*
+*[Ww]ire[Gg]uard*
+*[Mm]ullvad*
+*[Pp]roton[Vv][Pp][Nn]*
+*[Nn]ord[Vv][Pp][Nn]*
+*[Ee]xpress[Vv][Pp][Nn]*
+*Shadowrocket*
+*Quantumult*
+
+# --- Messaging: auth tokens and message DBs live in these cache roots ---
+~/Library/Caches/*[Ww]hats[Aa]pp*
+~/Library/Caches/*[Tt]elegram*
+~/Library/Caches/*[Tt]encent*
+~/Library/Caches/*[Ww]e[Cc]hat*
+~/Library/Caches/*Signal*
+~/Library/Caches/*[Dd]iscord*
+~/Library/Caches/*[Ss]lack*
+~/Library/Caches/*zoom*
+~/Library/Caches/*[Tt]eams*
+~/Library/Containers/*[Ww]hats[Aa]pp*
+~/Library/Containers/*[Tt]elegram*
+~/Library/Containers/*[Tt]encent*
+~/Library/Containers/*[Ww]e[Cc]hat*
+~/Library/Containers/*Signal*
+~/Library/Group Containers/*[Ww]hats[Aa]pp*
+~/Library/Group Containers/*[Tt]elegram*
+~/Library/Group Containers/*[Tt]encent*
+~/Library/Group Containers/*zoom*
+~/Library/Application Support/Slack/storage*
+~/Library/Application Support/Slack/Local Storage*
+~/Library/Application Support/discord/Local Storage*
+~/Library/Application Support/zoom.us/data/*.db*
+
+# --- Browsers (report-only in system mode; profile state is not a cache) ---
+~/Library/Caches/Google
+~/Library/Caches/Google/*
+~/Library/Caches/com.google.*
+~/Library/Caches/com.apple.Safari*
+~/Library/Caches/Firefox*
+~/Library/Caches/org.mozilla.*
+~/Library/Caches/BraveSoftware*
+~/Library/Caches/com.brave.*
+~/Library/Caches/company.thebrowser.*
+~/Library/Caches/Arc*
+~/Library/Application Support/Google/Chrome*
+~/Library/Application Support/Firefox*
+~/Library/Application Support/BraveSoftware*
+~/Library/Application Support/Arc*
+
+# --- AI tools: state only. Session mode owns Claude/Cache and vm_bundles. ---
+*com.anthropic.*
+~/Library/Caches/claude-cli-nodejs*
+~/Library/Application Support/Claude/claude-code*
+~/Library/Application Support/Claude/local-agent-mode-sessions*
+~/Library/Application Support/Claude/Local Storage*
+~/Library/Application Support/Claude/Session Storage*
+~/Library/Application Support/Claude/IndexedDB*
+~/Library/Application Support/Claude/Cookies*
+~/Library/Application Support/Claude/*.json
+*ChatGPT*
+*com.openai.*
+~/Library/Application Support/Codex/User*
+*codex-runtimes*
+~/Library/Application Support/Cursor/User*
+*[Oo]llama*
+*LM Studio*
+*lmstudio*
+
+# --- IDEs (index caches are hours to rebuild; workspace state beside them) ---
+*JetBrains*
+*com.jetbrains.*
+~/Library/Application Support/Code
+~/Library/Application Support/Code/User*
+~/Library/Application Support/Code/Backups*
+*com.microsoft.VSCode*
+
+# --- Cloud sync clients (touching their state corrupts sync) ---
+*[Dd]ropbox*
+*com.google.drivefs*
+*com.google.GoogleDrive*
+*google.keystone*
+*GoogleUpdater/Current*
+*[Oo]ne[Dd]rive*
+*com.sync.desktop*
+*CloudDocs*
+*com.apple.bird*
+
+# --- Endpoint security sensors (deleting in their containers trips tamper detection) ---
+*com.crowdstrike.*
+*com.sentinelone.*
+*com.sentinel-labs.*
+*com.eset.*
+*com.jamf.*
+*com.jamfsoftware.*
+*com.paloaltonetworks.*
+*com.cisco.anyconnect*
+*com.cisco.secureclient*
+
+# --- Local additions ---
+*[Oo]bsidian*
+~/.ssh*
+~/.gnupg*
+~/.claude/projects/*/memory*
