@@ -7,59 +7,66 @@ argument-hint: "[full|summary|clean]"
 
 # Audit iCloud
 
-Parse the argument to determine which mode to run:
+You are executing the `/audit-icloud` skill.
 
-- **`full`** (or no argument) — full audit: artifacts, every container with its files, totals
-- **`summary`** — container totals only, no per-file listings
-- **`clean`** — run the audit, then offer to move any artifacts found to the Trash
+## Where the code lives
 
-## Execution
+The engine is the `audit-icloud` CLI from **hosaypeng/audit-icloud** (`~/Code/audit-icloud`,
+symlinked to `~/.local/bin/audit-icloud`). This skill is a thin client: it runs the CLI and
+presents the result, so what Claude does and what the user does at a prompt share one code path.
 
-```bash
-# full
-bash ~/.claude/skills/audit-icloud/scripts/audit_icloud.sh
-
-# summary
-ICLOUD_AUDIT_SUMMARY=1 bash ~/.claude/skills/audit-icloud/scripts/audit_icloud.sh
+```
+audit-icloud [report] [-s|--summary]
+audit-icloud clean [-n|--dry-run] [-y|--yes]
+audit-icloud help
 ```
 
-The script never modifies anything and always exits 0 (1 only if `~/Library/Mobile Documents` is missing).
+IF `audit-icloud` is not on PATH → tell the user to run `~/Code/audit-icloud/install.sh` (or
+clone `git@github.com:hosaypeng/audit-icloud.git` to `~/Code/audit-icloud` first). Do not
+reimplement any of it here.
 
-## What the script reports
+## Argument Parsing
 
-- **Artifacts** — `[ARTIFACT] <path> (<size>)` for junk macOS scatters into synced folders: `.DS_Store`, `Thumbs.db`, `*.tmp`, `._*` resource forks, and the directories `.Spotlight-*`, `.Trashes`, `__MACOSX`, `.fseventsd`, `.TemporaryItems`. Artifacts are excluded from container file counts.
-- **Containers** — `--- <container> (<n> files, <size>[, <n> not downloaded]) ---`. Containers with ≤50 files list each file; larger ones are grouped by top-level item, largest first. `.icloud` placeholders (files not downloaded to this Mac) are counted separately and never sized.
-- **Summary** — total files, total size, not-downloaded count, containers with files, empty containers, artifact count and size.
+| Argument | Command |
+|----------|---------|
+| *(none)* / `full` | `audit-icloud` |
+| `summary` | `audit-icloud --summary` |
+| `clean` | `audit-icloud clean --dry-run`, present the list, **ask the user**, then `audit-icloud clean --yes` |
 
-The script already flags WhatsApp containers (`(encrypted WhatsApp backup — never modify)`) and does not list files in `iCloud~md~obsidian`.
+Without `--yes` the `clean` command waits on a confirmation prompt that this non-interactive
+shell cannot answer, so the confirmation happens in chat instead: dry-run → show → ask → `--yes`.
 
-## Presenting Results
+## What the CLI reports
 
-1. **Artifacts table** (if any found):
+- **Artifacts** — `[ARTIFACT] <path> (<size>)`: `.DS_Store`, `Thumbs.db`, `*.tmp`, `._*`, and the
+  directories `.Spotlight-*`, `.Trashes`, `__MACOSX`, `.fseventsd`, `.TemporaryItems`.
+- **Containers** — `--- <container> (<n> files, <size>[, <n> not downloaded]) ---`, then per-file
+  rows (≤50 files) or rows grouped by top-level item, largest first. WhatsApp containers carry an
+  `(encrypted WhatsApp backup — never modify)` note; `iCloud~md~obsidian` is counted but not listed.
+- **Summary** — total files, total size, not-downloaded count, containers with files, empty
+  containers, artifact count and size.
 
-| Type | Path | Size |
-| ---- | ---- | ---- |
+`clean` moves each artifact to `~/.Trash/<name>.<timestamp>` with `mv -n` and prints a restore
+`mv` line per item. It skips anything inside a WhatsApp container. Nothing is ever `rm`'d.
 
-2. **Container summary table** (always shown):
+## Presentation
 
-| Container | Files | Size |
-| --------- | ----: | ---- |
-
+1. **Artifacts table** (if any): `| Type | Path | Size |`
+2. **Container table** (always): `| Container | Files | Size |`
 3. **Totals line**: total files, total size, containers with files, empty containers.
+4. For `full`, also show the per-file / grouped listings.
+5. For `clean`, after the real run show the moved items and their restore lines.
 
-For **`full`** mode, also show the per-file / grouped listings the script printed.
+## Rules
 
-For **`clean`** mode, after presenting results, ask the user which artifacts to move. Move confirmed items to `~/.Trash/` with `mv -n <path> ~/.Trash/` — never `find -delete` or `rm`. Skip anything inside a WhatsApp container.
-
-## Important
-
-- ALWAYS scan ALL of `~/Library/Mobile Documents/`, not just `com~apple~CloudDocs` — there are 100+ containers.
-- Never move or delete files in `clean` mode without explicit user confirmation.
-- WhatsApp backups are encrypted — flag them, never modify.
-- `*.tmp` can match real files; show the full artifact list before any move.
+- Never run `audit-icloud clean --yes` without the user confirming the dry-run list in chat.
+- WhatsApp backups are encrypted — the CLI never touches them; do not work around that.
+- `*.tmp` can match real files; call out any `.tmp` entry in the list before asking.
+- Moves inside an iCloud container sync to every device; say so if the list is large.
 
 ## Troubleshooting
 
 - **Permission denied**: iCloud Drive may be syncing. Wait and retry.
-- **Output too large**: use `summary` mode.
-- **Missing containers**: some containers only appear after their app has been opened at least once.
+- **Output too large**: use `summary`.
+- **Missing containers**: some containers only appear after their app has been opened once.
+- **Restoring something**: paste the `restore: mv -n …` line the CLI printed.
