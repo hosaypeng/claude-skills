@@ -9,32 +9,45 @@ argument-hint: "[session|system|purge|forensic|all|history] [--dry-run]"
 
 You are executing the `/cleanup` skill. This skill consolidates session artifact cleanup, system cache cleanup, and forensic trace cleanup into a single command with modes.
 
+## Command-line front end
+
+`~/.local/bin/cleanup` (symlink to `bin/cleanup` in this skill) is the same engine usable without Claude Code: it dry-runs, prints a summary, asks, then runs. This skill calls it with `--yes` or `--dry-run` so the two paths never diverge.
+
+```
+cleanup [all|session|system|purge|forensic] [-n|--dry-run] [-y|--yes] [-v|--verbose] [-t N]
+cleanup history [N] | preview | log [N] | whitelist | paths | status | help
+```
+
+If the symlink is missing: `ln -s ~/.claude/skills/cleanup/bin/cleanup ~/.local/bin/cleanup`.
+
 ## Argument Parsing
 
 Parse the user's argument to determine the mode and flags:
 
-| Argument | Mode | Script |
-|----------|------|--------|
-| `session` | Session artifacts only | `cleanup_session.sh` |
-| `system` | System caches only | `cleanup_system.sh` |
-| `purge` | Project build artifacts only | `cleanup_purge.sh` |
-| `forensic` | Forensic traces only | `cleanup_forensic.sh` |
-| `all` | All four in sequence | `cleanup_all.sh` |
-| `history [N]` | Show last N sessions + restore commands | `cleanup_history.sh N` |
-| *(none)* | All four in sequence | `cleanup_all.sh` |
+| Argument | Mode | Command |
+|----------|------|---------|
+| `session` | Session artifacts only | `cleanup session --yes` |
+| `system` | System caches only | `cleanup system --yes` |
+| `purge` | Project build artifacts only | `cleanup purge --yes` |
+| `forensic` | Forensic traces only | `cleanup forensic --yes` |
+| `all` | All four in sequence | `cleanup all --yes` |
+| `history [N]` | Show last N sessions + restore commands | `cleanup history N` |
+| *(none)* | All four in sequence | `cleanup all --yes` |
 
 **Flags:**
 
 | Flag | Effect |
 |------|--------|
-| `--dry-run` | Run every guard and size every candidate, but move nothing. Writes `~/.claude/cleanup-preview.txt` (grouped by section, largest first). Implemented by exporting `CLEANUP_DRY_RUN=1` before the script. Works with every mode including `all` (which keeps one preview per mode: `cleanup-preview-{session,system,forensic,purge}.txt`). |
+| `--dry-run` | Replace `--yes` with `--dry-run`: every guard runs and every candidate is sized, but nothing moves. Writes `~/.claude/cleanup-preview.txt` (grouped by section, largest first) and a `.tsv` twin; `all` also keeps one preview per mode (`cleanup-preview-<mode>.{txt,tsv}`). |
+
+The CLI runs the dry-run itself before the real run, so a plain `/cleanup system` already produces the preview and then executes. Pass `--verbose` to see the raw script output instead of the summary. The underlying scripts remain runnable directly: `CLEANUP_DRY_RUN=1 bash ~/.claude/skills/cleanup/scripts/cleanup_system.sh`.
 
 **Script directory**: `~/.claude/skills/cleanup/scripts/`
 
 ## Execution
 
 1. Determine the mode from the argument (default = `all`) and whether `--dry-run` is present.
-2. Run the script: `CLEANUP_DRY_RUN=1 bash <script>` for a dry run, `bash <script>` otherwise.
+2. Run `cleanup <mode> --yes` (or `cleanup <mode> --dry-run`). Without `--yes` the CLI would wait on a confirmation prompt that this non-interactive shell cannot answer.
 3. Capture and present the output to the user.
 4. Flag any item that recovered more than 500MB, any deletion that failed, and any report-only item exceeding 1GB.
 5. IF any single item exceeds 1GB → highlight it and confirm with the user before the next run.

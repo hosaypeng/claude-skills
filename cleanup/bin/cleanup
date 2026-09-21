@@ -1,0 +1,221 @@
+#!/bin/bash
+# cleanup — command-line front end for the /cleanup skill.
+#
+# Every cleaning command runs a dry-run first, shows what would move to the
+# Trash, and asks before doing it. Nothing is ever rm'd: everything goes to
+# ~/.Trash and `cleanup history` prints the mv that puts it back.
+#
+# Install: ln -s ~/.claude/skills/cleanup/bin/cleanup ~/.local/bin/cleanup
+
+set -e
+
+BIN_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || echo "${BASH_SOURCE[0]}")")" && pwd)"
+SKILL_DIR="$(cd "$BIN_DIR/.." && pwd)"
+SCRIPTS="$SKILL_DIR/scripts"
+CLAUDE_DIR="$HOME/.claude"
+PREVIEW_TXT="$CLAUDE_DIR/cleanup-preview.txt"
+PREVIEW_TSV="$CLAUDE_DIR/cleanup-preview.tsv"
+WHITELIST="$CLAUDE_DIR/cleanup-whitelist.txt"
+PURGE_PATHS="$CLAUDE_DIR/cleanup-purge-paths.txt"
+OPLOG="$CLAUDE_DIR/cleanup-operations.log"
+MODES="session system purge forensic"
+
+usage() {
+  cat <<EOF
+Usage: cleanup <command> [options]
+
+Cleaning commands (dry-run first, then ask):
+  all          session + system + forensic + purge   (default)
+  session      Claude session artifacts, scratchpads, stale project caches
+  system       user/dev caches, updater payloads, saved state, old logs
+  purge        stale node_modules / target / .venv in project dirs
+  forensic     traces of uninstalled apps (orphans are report-only)
+
+Other commands:
+  history [N]  last N runs and a ready-to-paste mv for anything still in Trash
+  preview      show the last dry-run preview
+  log [N]      tail the per-item operations log
+  whitelist    edit the whitelist (paths cleanup must never touch)
+  paths        edit the purge scan directories
+  status       Trash size, log size, last run
+  help         this text
+
+Options:
+  -n, --dry-run   preview only; write ~/.claude/cleanup-preview.txt, move nothing
+  -y, --yes       skip the confirmation prompt
+  -v, --verbose   show the full script output instead of the summary
+  -t, --top N     number of largest items to list in the summary (default 12)
+
+Everything is moved to ~/.Trash, never deleted. Empty the Trash yourself when
+you are happy with a run. Whitelist: $WHITELIST
+EOF
+}
+
+# --- helpers -----------------------------------------------------------------
+
+fmt_kb() {
+  local kb=$1
+  if [ "$kb" -lt 0 ] 2>/dev/null; then echo "?"
+  elif [ "$kb" -ge 1048576 ]; then awk -v k="$kb" 'BEGIN{printf "%.1fGB", k/1048576}'
+  elif [ "$kb" -ge 1024 ]; then echo "$((kb / 1024))MB"
+  else echo "${kb}KB"; fi
+}
+
+die() { echo "cleanup: $*" >&2; exit 1; }
+
+# Print a summary of one or more preview TSVs: per-section totals, the largest
+# items, and the grand total. Report-only rows are listed separately.
+summarize() {
+  local top="$1"; shift
+  local tsv
+  for tsv in "$@"; do [ -f "$tsv" ] || die "no preview at $tsv"; done
+  local total items reports
+  total=$(cat "$@" | awk -F'\t' '$3=="trash" && $2>=0 {s+=$2} END{print s+0}')
+  items=$(cat "$@" | awk -F'\t' '$3=="trash"' | wc -l | tr -d ' ')
+  reports=$(cat "$@" | awk -F'\t' '$3=="report"' | wc -l | tr -d ' ')
+  if [ "$items" -eq 0 ]; then
+    echo "Nothing to trash."
+  else
+    echo "By section:"
+    cat "$@" | awk -F'\t' '$3=="trash" {n[$1]++; if($2>=0) s[$1]+=$2} END{for(k in n) printf "%s\t%d\t%d\n", k, s[k], n[k]}' \
+      | sort -t$'\t' -k2,2nr \
+      | while IFS=$'\t' read -r sec kb n; do
+          printf "  %-40s %8s  (%d item%s)\n" "$sec" "$(fmt_kb "$kb")" "$n" "$([ "$n" -eq 1 ] || echo s)"
+        done
+    echo ""
+    echo "Largest:"
+    cat "$@" | awk -F'\t' '$3=="trash"' | sort -t$'\t' -k2,2nr | head -n "$top" \
+      | while IFS=$'\t' read -r _ kb _ path; do
+          printf "  %8s  %s\n" "$(fmt_kb "$kb")" "${path/#$HOME/~}"
+        done
+    echo ""
+    echo "Total: $items item(s), $(fmt_kb "$total") → ~/.Trash"
+  fi
+  if [ "$reports" -gt 0 ]; then
+    echo ""
+    echo "Report only ($reports, never trashed — review by hand):"
+    cat "$@" | awk -F'\t' '$3=="report"' | sort -t$'\t' -k2,2nr | head -n "$top" \
+      | while IFS=$'\t' read -r _ kb _ path; do
+          printf "  %8s  %s\n" "$(fmt_kb "$kb")" "${path/#$HOME/~}"
+        done
+  fi
+}
+
+run_mode() {
+  # $1 mode, $2 dry (1/0), $3 verbose (1/0)
+  local mode="$1" dry="$2" verbose="$3"
+  local script="$SCRIPTS/cleanup_${mode}.sh"
+  [ -f "$script" ] || die "missing $script"
+  if [ "$verbose" = 1 ]; then
+    CLEANUP_DRY_RUN="$dry" bash "$script"
+  else
+    CLEANUP_DRY_RUN="$dry" bash "$script" > "$RUN_LOG" 2>&1 || {
+      echo "  $mode exited with an error — output:" >&2
+      tail -n 30 "$RUN_LOG" >&2
+      return 1
+    }
+  fi
+}
+
+confirm() {
+  local prompt="$1" reply
+  if [ ! -t 0 ]; then
+    echo "(not a terminal — pass --yes to run without confirming; nothing was moved)"
+    return 1
+  fi
+  printf "%s [y/N] " "$prompt"
+  read -r reply
+  case "$reply" in y|Y|yes|YES) return 0 ;; *) return 1 ;; esac
+}
+
+clean() {
+  local target="$1" dry="$2" yes="$3" verbose="$4" top="$5"
+  local modes tsvs=() m
+  if [ "$target" = all ]; then modes="$MODES"; else modes="$target"; fi
+  RUN_LOG=$(mktemp "${TMPDIR:-/tmp}/cleanup-run.XXXXXX")
+  trap 'rm -f "$RUN_LOG"' EXIT
+
+  echo "Previewing ($modes)…"
+  for m in $modes; do
+    run_mode "$m" 1 "$verbose"
+    cp "$PREVIEW_TSV" "$CLAUDE_DIR/cleanup-preview-$m.tsv"
+    cp "$PREVIEW_TXT" "$CLAUDE_DIR/cleanup-preview-$m.txt"
+    tsvs+=("$CLAUDE_DIR/cleanup-preview-$m.tsv")
+  done
+  echo ""
+  summarize "$top" "${tsvs[@]}"
+  echo ""
+  echo "Full preview: ${PREVIEW_TXT/#$HOME/~}$([ "$target" = all ] && echo " (per mode: cleanup-preview-<mode>.txt)")"
+
+  local items
+  items=$(cat "${tsvs[@]}" | awk -F'\t' '$3=="trash"' | wc -l | tr -d ' ')
+  [ "$dry" = 1 ] && return 0
+  [ "$items" -eq 0 ] && return 0
+
+  echo ""
+  if [ "$yes" != 1 ]; then
+    confirm "Move $items item(s) to ~/.Trash?" || { echo "Cancelled."; return 0; }
+  fi
+  echo ""
+  for m in $modes; do
+    echo "Running ${m}…"
+    run_mode "$m" 0 "$verbose"
+  done
+  echo ""
+  # Pull the result lines straight from the operations log for this run.
+  local start
+  start=$(grep -n "^# ==== .* started at" "$OPLOG" | tail -n "$(echo "$modes" | wc -w | tr -d ' ')" | head -1 | cut -d: -f1)
+  tail -n +"$start" "$OPLOG" | grep '^# ==== .* ended' | sed -E 's/^# ==== ([a-z]+) ended at [^,]+, (.*) ====$/  \1: \2/'
+  echo ""
+  echo "Done. Everything is in ~/.Trash — \`cleanup history\` prints the restore commands."
+}
+
+# --- main --------------------------------------------------------------------
+
+cmd=""
+dry=0; yes=0; verbose=0; top=12
+args=()
+while [ $# -gt 0 ]; do
+  case "$1" in
+    -n|--dry-run) dry=1 ;;
+    -y|--yes) yes=1 ;;
+    -v|--verbose) verbose=1 ;;
+    -t|--top) shift; top="${1:-12}" ;;
+    -h|--help|help) usage; exit 0 ;;
+    -*) die "unknown option $1 (try: cleanup help)" ;;
+    *) if [ -z "$cmd" ]; then cmd="$1"; else args+=("$1"); fi ;;
+  esac
+  shift
+done
+[ -z "$cmd" ] && cmd=all
+
+case "$cmd" in
+  all|session|system|purge|forensic)
+    clean "$cmd" "$dry" "$yes" "$verbose" "$top" ;;
+  history)
+    bash "$SCRIPTS/cleanup_history.sh" "${args[0]:-5}" ;;
+  preview)
+    [ -f "$PREVIEW_TXT" ] || die "no preview yet — run a cleaning command or cleanup <mode> -n"
+    ${PAGER:-less} "$PREVIEW_TXT" ;;
+  log)
+    [ -f "$OPLOG" ] || die "no operations log yet"
+    tail -n "${args[0]:-40}" "$OPLOG" ;;
+  whitelist)
+    [ -f "$WHITELIST" ] || printf '# One glob per line. ~ expands to $HOME. Lines starting with # are comments.\n' > "$WHITELIST"
+    ${EDITOR:-vi} "$WHITELIST" ;;
+  paths)
+    [ -f "$PURGE_PATHS" ] || printf '# One directory per line to scan for build artifacts. ~ allowed.\n~/Code\n' > "$PURGE_PATHS"
+    ${EDITOR:-vi} "$PURGE_PATHS" ;;
+  status)
+    echo "Trash:   $(du -sh "$HOME/.Trash" 2>/dev/null | cut -f1 || echo 0)  ($(ls "$HOME/.Trash" 2>/dev/null | wc -l | tr -d ' ') entries)"
+    if [ -f "$OPLOG" ]; then
+      echo "Log:     $(du -h "$OPLOG" | cut -f1)  ${OPLOG/#$HOME/~}"
+      echo "Last run: $(grep '^# ==== .* ended' "$OPLOG" | tail -1 | sed -E 's/^# ==== (.*) ====$/\1/')"
+    else
+      echo "Log:     none yet"
+    fi
+    [ -f "$WHITELIST" ] && echo "Whitelist: $(grep -cv '^\s*#\|^\s*$' "$WHITELIST" | tr -d ' ') pattern(s)  ${WHITELIST/#$HOME/~}"
+    echo "Free:    $(df -h / | tail -1 | awk '{print $4}')" ;;
+  *)
+    die "unknown command '$cmd' (try: cleanup help)" ;;
+esac

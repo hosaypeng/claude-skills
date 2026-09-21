@@ -9,6 +9,7 @@ set -e
 # Usage: cleanup_history.sh [N]   — show the last N sessions (default 5)
 
 OPLOG="$HOME/.claude/cleanup-operations.log"
+trap "exit 0" PIPE   # piping into head is fine
 LIMIT="${1:-5}"
 
 if [ ! -f "$OPLOG" ]; then

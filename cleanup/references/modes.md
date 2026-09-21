@@ -91,6 +91,9 @@ Wrongly protecting a real orphan costs one line of output. Wrongly flagging a li
 - Crash reports and diagnostic logs
 - Siri suggestions data
 
+## Command line (`cleanup`)
+`bin/cleanup`, symlinked to `~/.local/bin/cleanup`, wraps the same scripts for use outside Claude Code. A cleaning command always dry-runs first, prints per-section totals, the largest items and the report-only list, then asks `Move N item(s) to ~/.Trash? [y/N]`. `-n` stops after the preview, `-y` skips the prompt (the skill uses this), `-v` streams the raw script output. Non-interactive stdin without `-y` stops after the preview and says so. `cleanup all` previews all four modes and asks once. Other subcommands: `history`, `preview`, `log`, `whitelist`, `paths`, `status`.
+
 ## History (`/cleanup history [N]`)
 Parses `~/.claude/cleanup-operations.log` (and its `.old` rotation) and prints the last N sessions — mode, start/end, item and size totals, counts of trashed / would-trash / skipped / failed / reported — followed by an `mv -n "~/.Trash/<name>.<ts>" "<original path>"` line for every trashed item whose Trash entry still exists. Reversibility is only as good as the Trash: once emptied, nothing here can be restored.
 

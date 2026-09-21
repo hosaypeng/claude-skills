@@ -20,6 +20,7 @@ SKIPPED_COUNT=0
 WHITELIST_FILE="$HOME/.claude/cleanup-whitelist.txt"
 PROTECTED_FILE="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/references/protected_patterns.txt"
 PREVIEW_FILE="$HOME/.claude/cleanup-preview.txt"
+PREVIEW_TSV="${PREVIEW_FILE%.txt}.tsv"   # section \t size_kb \t kind \t path — for the CLI
 OPLOG="$HOME/.claude/cleanup-operations.log"
 OPLOG_MAX_KB=5120
 
@@ -89,6 +90,7 @@ render_preview() {
       echo ""
     done < <(awk -F'\t' '!seen[$1]++ {print $1}' "$LEDGER")
   } > "$PREVIEW_FILE"
+  awk -F'\t' '!seen[$4]++' "$LEDGER" > "$PREVIEW_TSV"
   echo ""
   echo "Dry-run preview written to $PREVIEW_FILE"
 }
