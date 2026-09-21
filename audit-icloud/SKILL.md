@@ -9,47 +9,57 @@ argument-hint: "[full|summary|clean]"
 
 Parse the argument to determine which mode to run:
 
-- **`full`** (or no argument) — run the full audit script and present results
-- **`summary`** — run the script but only show the summary table, skip per-file listings
-- **`clean`** — run the audit, then offer to delete any artifacts found (.DS_Store, Thumbs.db, .tmp, ._* files)
+- **`full`** (or no argument) — full audit: artifacts, every container with its files, totals
+- **`summary`** — container totals only, no per-file listings
+- **`clean`** — run the audit, then offer to move any artifacts found to the Trash
 
 ## Execution
 
-Run the audit script:
-
 ```bash
+# full
 bash ~/.claude/skills/audit-icloud/scripts/audit_icloud.sh
+
+# summary
+ICLOUD_AUDIT_SUMMARY=1 bash ~/.claude/skills/audit-icloud/scripts/audit_icloud.sh
 ```
+
+The script never modifies anything and always exits 0 (1 only if `~/Library/Mobile Documents` is missing).
+
+## What the script reports
+
+- **Artifacts** — `[ARTIFACT] <path> (<size>)` for junk macOS scatters into synced folders: `.DS_Store`, `Thumbs.db`, `*.tmp`, `._*` resource forks, and the directories `.Spotlight-*`, `.Trashes`, `__MACOSX`, `.fseventsd`, `.TemporaryItems`. Artifacts are excluded from container file counts.
+- **Containers** — `--- <container> (<n> files, <size>[, <n> not downloaded]) ---`. Containers with ≤50 files list each file; larger ones are grouped by top-level item, largest first. `.icloud` placeholders (files not downloaded to this Mac) are counted separately and never sized.
+- **Summary** — total files, total size, not-downloaded count, containers with files, empty containers, artifact count and size.
+
+The script already flags WhatsApp containers (`(encrypted WhatsApp backup — never modify)`) and does not list files in `iCloud~md~obsidian`.
 
 ## Presenting Results
 
-After running the script, present results as:
-
 1. **Artifacts table** (if any found):
 
-| Type      | Path                  | Size |
-| --------- | --------------------- | ---- |
+| Type | Path | Size |
+| ---- | ---- | ---- |
 
 2. **Container summary table** (always shown):
 
-| Container         | Files | Size     | Description          |
-| ----------------- | ----: | -------- | -------------------- |
+| Container | Files | Size |
+| --------- | ----: | ---- |
 
 3. **Totals line**: total files, total size, containers with files, empty containers.
 
-For **`full`** mode, also list individual files per container (grouped for large containers like Apple Books).
+For **`full`** mode, also show the per-file / grouped listings the script printed.
 
-For **`clean`** mode, after presenting results, ask the user which artifacts to delete. Move confirmed deletions to `~/.Trash/` (e.g., `mv -n artifact ~/.Trash/`) — never use `find -delete` or `rm`. Offer to clean up empty directories left behind (also move to Trash).
+For **`clean`** mode, after presenting results, ask the user which artifacts to move. Move confirmed items to `~/.Trash/` with `mv -n <path> ~/.Trash/` — never `find -delete` or `rm`. Skip anything inside a WhatsApp container.
 
 ## Important
 
-- ALWAYS scan ALL of `~/Library/Mobile Documents/`, not just `com~apple~CloudDocs`. There are 100+ iCloud containers for different apps.
-- The Obsidian vault lives in `iCloud~md~obsidian` — include it in the summary but do not list individual vault files (use `/audit-vault` for that).
-- Never delete files in `clean` mode without explicit user confirmation.
-- WhatsApp backups are encrypted — flag them but never modify.
+- ALWAYS scan ALL of `~/Library/Mobile Documents/`, not just `com~apple~CloudDocs` — there are 100+ containers.
+- Never move or delete files in `clean` mode without explicit user confirmation.
+- WhatsApp backups are encrypted — flag them, never modify.
+- `*.tmp` can match real files; show the full artifact list before any move.
 
 ## Troubleshooting
 
 - **Permission denied**: iCloud Drive may be syncing. Wait and retry.
-- **Output too large**: The script groups large containers (50+ files) by top-level item. If still too large, use `summary` mode.
-- **Missing containers**: Some containers only appear after their app has been opened at least once.
+- **Output too large**: use `summary` mode.
+- **Missing containers**: some containers only appear after their app has been opened at least once.
