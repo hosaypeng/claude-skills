@@ -2,7 +2,7 @@
 user-invocable: true
 name: threat-hunt
 description: "Detect nation-state spyware (Pegasus, Candiru/DevilsTongue), credential theft, and verify physical-security mitigations on macOS. Use when user says 'threat hunt', 'check for pegasus', 'spyware scan', 'am I being surveilled', 'nation-state', 'advanced threat', 'APT scan', 'check for spyware', or 'credential exposure'."
-allowed-tools: Bash
+allowed-tools: Bash, Read
 argument-hint: "[full | persistence | process | network | ioc | hardening | credentials] (default: full)"
 ---
 
@@ -15,9 +15,9 @@ argument-hint: "[full | persistence | process | network | ioc | hardening | cred
 
 ## Where the code lives
 
-The engine is the `threat-hunt` CLI from **hosaypeng/threat-hunt** (`~/Code/threat-hunt`, symlinked to `~/.local/bin/threat-hunt`). This skill is a thin client: it runs the CLI with `-v` and turns the full output into the scored report, so what Claude does and what the user does at a prompt share one code path.
+The engine is the `threat-hunt` CLI in `~/Code/threat-hunt` (its own git repo, not yet on GitHub; symlinked to `~/.local/bin/threat-hunt`). This skill is a thin client: it runs the CLI with `-v` and turns the full output into the scored report, so what Claude does and what the user does at a prompt share one code path.
 
-IF `threat-hunt` is not on PATH → tell the user to run `~/Code/threat-hunt/install.sh` (or clone the repo to `~/Code/threat-hunt` first). Do not reimplement any of it here.
+IF `threat-hunt` is not on PATH → tell the user to run `~/Code/threat-hunt/install.sh` (the repo must exist at `~/Code/threat-hunt` first). Do not reimplement any of it here.
 
 ## Mode Routing
 
@@ -88,7 +88,7 @@ Format per `~/Code/threat-hunt/references/output_format.md`. Produce a Threat Hu
 - **"Operation not permitted" on launchctl print:** system-domain enumeration can require root. `sweep_xpc_services` prints SKIPPED for that domain and continues with the user domain and `launchctl list`.
 - **Login items "Could not enumerate":** Automation permission for System Events was not granted to the terminal. Not a finding.
 - **`match_ioc_domains` slow:** dead IOC domains time out on resolution; `host -W 2` caps each at 2 s and only 25 are sampled.
-- **A probe exceeded 90 s:** the runner kills it and lists it as `(hung)`. Raise `THREAT_HUNT_PROBE_TIMEOUT` if the machine is under load.
+- **A probe exceeded 90 s:** the runner kills it and lists it as `(hung)`. Re-run with `threat-hunt <mode> -v -t 180` on a loaded machine (the CLI sets the timeout; the env var alone is overwritten).
 - **Refreshing IOCs:** save a new file under the same prefix with today's date (`ioc_pegasus_YYYY-MM-DD.txt`); the scripts pick the newest by name. Keep the `TYPE|VALUE|DESCRIPTION` format. Sources are named in each file's header; Amnesty's `AmnestyTech/investigations` repo publishes the Pegasus domain list.
 - **`threat-hunt: command not found`:** run `~/Code/threat-hunt/install.sh`; it symlinks into `~/.local/bin` and warns if that is not on PATH.
 - **Fixing a probe:** edit it in `~/Code/threat-hunt/scripts/` and commit there — this skill directory holds only this file.

@@ -12,9 +12,9 @@ argument-hint: "[full | security | hardware | network] (default: full)"
 
 ## Where the code lives
 
-The engine is the `diagnose` CLI from **hosaypeng/diagnose** (`~/Code/diagnose`, symlinked to `~/.local/bin/diagnose`). This skill is a thin client: it runs the CLI with `-v` and turns the full output into the scored report, so what Claude does and what the user does at a prompt share one code path.
+The engine is the `diagnose` CLI in `~/Code/diagnose` (its own git repo, not yet on GitHub; symlinked to `~/.local/bin/diagnose`). This skill is a thin client: it runs the CLI with `-v` and turns the full output into the scored report, so what Claude does and what the user does at a prompt share one code path.
 
-IF `diagnose` is not on PATH → tell the user to run `~/Code/diagnose/install.sh` (or clone the repo to `~/Code/diagnose` first). Do not reimplement any of it here.
+IF `diagnose` is not on PATH → tell the user to run `~/Code/diagnose/install.sh` (the repo must exist at `~/Code/diagnose` first). Do not reimplement any of it here.
 
 ## Mode Routing
 
