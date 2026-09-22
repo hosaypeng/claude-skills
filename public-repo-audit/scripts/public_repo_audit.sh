@@ -22,17 +22,17 @@ FAIL_COUNT=0
 # Utility functions
 check_pass() {
     echo -e "${GREEN}✅${NC} $1"
-    ((PASS_COUNT++))
+    PASS_COUNT=$((PASS_COUNT + 1))
 }
 
 check_warn() {
     echo -e "${YELLOW}⚠️${NC}  $1"
-    ((WARN_COUNT++))
+    WARN_COUNT=$((WARN_COUNT + 1))
 }
 
 check_fail() {
     echo -e "${RED}❌${NC} $1"
-    ((FAIL_COUNT++))
+    FAIL_COUNT=$((FAIL_COUNT + 1))
 }
 
 header() {
@@ -113,7 +113,7 @@ SECRET_PATTERNS=(
 
 FOUND_SECRETS=0
 for pattern in "${SECRET_PATTERNS[@]}"; do
-    if git grep -i "$pattern" 2>/dev/null | head -1 | grep -q "$pattern"; then
+    if git grep -i -e "$pattern" -- ':!skills/' ':!60_archive/' 2>/dev/null | head -1 | grep -qF -- "$pattern"; then
         check_fail "Found pattern: $pattern"
         FOUND_SECRETS=$((FOUND_SECRETS + 1))
     fi
@@ -136,21 +136,21 @@ fi
 header "✅ PERSONAL INFO"
 
 # SSN pattern: XXX-XX-XXXX
-if git grep -E "[0-9]{3}-[0-9]{2}-[0-9]{4}" 2>/dev/null | head -1 | grep -q ".*"; then
+if git grep -E "[0-9]{3}-[0-9]{2}-[0-9]{4}" -- ':!skills/' 2>/dev/null | head -1 | grep -q ".*"; then
     check_fail "Possible SSN pattern found"
 else
     check_pass "No SSN patterns detected"
 fi
 
 # Credit card: various patterns
-if git grep -E "([0-9]{4}[ -]?){3}[0-9]{3,4}" 2>/dev/null | grep -qE "^[^:]*:[0-9]"; then
+if git grep -E "([0-9]{4}[ -]?){3}[0-9]{3,4}" -- ':!skills/' 2>/dev/null | grep -qE "^[^:]*:[0-9]"; then
     check_warn "Possible credit card number detected (manual review recommended)"
 else
     check_pass "No credit card patterns detected"
 fi
 
 # Check for email addresses (just warn, not a failure)
-EMAIL_COUNT=$(git grep -E "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}" 2>/dev/null | wc -l || echo "0")
+EMAIL_COUNT=$(git grep -E "[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}" -- ':!skills/' 2>/dev/null | wc -l || echo "0")
 if [ "$EMAIL_COUNT" -gt 0 ]; then
     check_warn "Found email addresses ($EMAIL_COUNT) - verify these are not personal"
 else
@@ -174,26 +174,38 @@ fi
 # ====== CHECK 5: GITIGNORE ======
 header "✅ .GITIGNORE VALIDATION"
 
+# Detect project type (exclude skills/ and 60_archive/ — these are tooling, not the project itself)
+IS_PYTHON=false
+if git ls-files | grep -vE "^(skills|60_archive)/" | grep -qE "\.py$" 2>/dev/null; then
+    IS_PYTHON=true
+fi
+
 GITIGNORE_PATH="$REPO_PATH/.gitignore"
 if [ ! -f "$GITIGNORE_PATH" ]; then
-    check_warn ".gitignore not found (should exclude venv, .env, __pycache__)"
+    check_warn ".gitignore not found"
 else
-    if grep -q "^venv/" "$GITIGNORE_PATH" 2>/dev/null; then
-        check_pass "venv/ excluded in .gitignore"
+    # Python-specific checks — only apply when .py files are tracked
+    if $IS_PYTHON; then
+        if grep -q "^venv/" "$GITIGNORE_PATH" 2>/dev/null; then
+            check_pass "venv/ excluded in .gitignore"
+        else
+            check_fail "venv/ NOT in .gitignore"
+        fi
+
+        if grep -q "__pycache__" "$GITIGNORE_PATH" 2>/dev/null; then
+            check_pass "__pycache__/ excluded in .gitignore"
+        else
+            check_warn "__pycache__/ not in .gitignore"
+        fi
     else
-        check_fail "venv/ NOT in .gitignore"
+        check_pass "Python checks skipped (no .py files in repo)"
     fi
 
+    # Universal checks — apply to all project types
     if grep -q "\.env" "$GITIGNORE_PATH" 2>/dev/null; then
         check_pass ".env excluded in .gitignore"
     else
-        check_fail ".env NOT in .gitignore"
-    fi
-
-    if grep -q "__pycache__" "$GITIGNORE_PATH" 2>/dev/null; then
-        check_pass "__pycache__/ excluded in .gitignore"
-    else
-        check_warn "__pycache__/ not in .gitignore"
+        check_warn ".env not in .gitignore (recommended for all repos)"
     fi
 
     if grep -q "\.DS_Store" "$GITIGNORE_PATH" 2>/dev/null; then

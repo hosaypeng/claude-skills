@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-VAULT="$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents"
+VAULT="$HOME/Documents/obsidian"
 
 # Derive valid tags from actual index files — never drifts
 VALID_TAGS="journal index"

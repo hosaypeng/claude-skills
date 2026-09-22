@@ -111,10 +111,11 @@ Every mode appends to one per-item operations log: `~/.claude/cleanup-operations
 [2026-09-21 12:23:08] [system] SKIPPED /path (protected|whitelisted|owner running or unknown|git-tracked|cloud-synced)
 [2026-09-21 12:23:09] [system] FAILED /path (permission denied or locked)
 [2026-09-21 12:23:09] [system] REPORTED /path (259MB, note)
+[2026-09-21 12:23:09] [session] PRUNED /path (empty tree)
 # ==== system ended at 2026-09-21 12:23:45, 115 items, 1GB, skipped 5, failed 0 ====
 ```
 
-Dry runs log `WOULD_TRASH` instead of `TRASHED`. `/cleanup history` parses this log. The older per-mode summary logs (`cleanup-log.txt`, `system-cleanup-log.txt`, `purge-projects-log.txt`, `purge-artifacts-log.txt`) are no longer written.
+Dry runs log `WOULD_TRASH` instead of `TRASHED` (and `WOULD_PRUNE` for `PRUNED`). `PRUNED` is an `rmdir` of a tree holding only empty directories — the one deletion that does not go through the Trash, because there is nothing to restore. `/cleanup history` parses this log. The older per-mode summary logs (`cleanup-log.txt`, `system-cleanup-log.txt`, `purge-projects-log.txt`, `purge-artifacts-log.txt`) are no longer written.
 
 ## Troubleshooting
 

@@ -8,14 +8,14 @@ description: "Sweep all dependency paths after vault structural changes (file mo
 
 Run all 6 checks in order. Auto-fix safe issues, report risky ones.
 
-**Vault root:** `~/Library/Mobile Documents/iCloud~md~obsidian/Documents`
+**Vault root:** `~/Documents/obsidian`
 
 ## 1. Vault-rag index (AUTO-FIX)
 
 ```python
 import json, os
 path = os.path.expanduser('~/Code/vault-rag/index_state.json')
-vault = os.path.expanduser('~/Library/Mobile Documents/iCloud~md~obsidian/Documents')
+vault = os.path.expanduser('~/Documents/obsidian')
 with open(path) as f:
     data = json.load(f)
 before = len(data)
