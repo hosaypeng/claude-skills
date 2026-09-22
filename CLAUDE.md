@@ -47,11 +47,9 @@ Include trigger phrases in the description so Claude knows when to invoke the sk
 5. IF SKILL.md exceeds ~800 words → THEN move templates to `skill-name/references/`
 6. Include a Troubleshooting section with 2-4 likely failure modes
 7. Test the skill by invoking it with `/skill-name`
-8. Run `/audit-skills` to validate
 
 ## Rules
 
-- Run `/audit-skills` after any changes.
 - Include trigger phrases in every description — without them, Claude won't know when to invoke the skill automatically.
 - IF bash logic exceeds 3 lines → THEN extract it to `scripts/`.
 - Keep skills focused — one skill, one responsibility. Compose skills rather than building monoliths.

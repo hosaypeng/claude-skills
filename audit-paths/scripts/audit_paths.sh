@@ -43,7 +43,7 @@ check_path() {
     http://*|https://*|mailto:*) return ;;
   esac
 
-  # Skip slash commands (e.g. /audit-skills) — single slash, no deeper path
+  # Skip slash commands (e.g. /audit-vault) — single slash, no deeper path
   if [[ "$raw_path" =~ ^/[a-z_-]+$ ]]; then
     return
   fi
