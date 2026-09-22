@@ -3,3 +3,10 @@ __pycache__/
 .DS_Store
 persist-state/scratchpad/
 **/config.json
+
+# Externally managed skill content (not this repo's work)
+superset/
+synced/
+
+# Generated audit output (rewritten every run; contains local paths)
+audit-paths/last_audit.log
