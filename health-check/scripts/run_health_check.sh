@@ -222,13 +222,18 @@ check_config_sync() {
 check_ioc_freshness() {
   echo ""
   echo "--- Security IOC Lists ---"
-  # Both security skills date their IOC files in the filename. A list older than 90 days
-  # means the IOC category of that skill is unverified, and nothing else surfaces that daily.
+  # Both security tools date their IOC files in the filename. A list older than 90 days
+  # means the IOC category of that tool is unverified, and nothing else surfaces that daily.
   # Only the newest file per prefix counts: a refresh adds a new dated file and the
   # scripts pick the newest by name, so a superseded list must not keep warning.
+  # The engines live in ~/Code (the skills are thin clients over the CLIs).
   local skill prefix newest date age found=0
   for skill in diagnose threat-hunt; do
-    for prefix in $(ls "$SKILLS/$skill/references"/ioc_*.txt 2>/dev/null | sed -E 's/_[0-9]{4}-[0-9]{2}-[0-9]{2}\.txt$//' | sort -u); do
+    if [ ! -d "$HOME/Code/$skill/references" ]; then
+      echo "SKIP: $skill repo not found at ~/Code/$skill"
+      continue
+    fi
+    for prefix in $(ls "$HOME/Code/$skill/references"/ioc_*.txt 2>/dev/null | sed -E 's/_[0-9]{4}-[0-9]{2}-[0-9]{2}\.txt$//' | sort -u); do
       newest=$(ls "${prefix}"_*.txt 2>/dev/null | sort | tail -1)
       [ -f "$newest" ] || continue
       found=1

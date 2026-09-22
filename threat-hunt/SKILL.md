@@ -13,6 +13,12 @@ argument-hint: "[full | persistence | process | network | ioc | hardening | cred
 **Disclaimer (print at start of every run; the runner prints it too):**
 > This tool detects known indicators and configuration weaknesses. It CANNOT detect zero-day exploits, in-memory-only implants, or kernel-level rootkits that have bypassed SIP. For iOS-specific Pegasus detection, use MVT (Mobile Verification Toolkit).
 
+## Where the code lives
+
+The engine is the `threat-hunt` CLI from **hosaypeng/threat-hunt** (`~/Code/threat-hunt`, symlinked to `~/.local/bin/threat-hunt`). This skill is a thin client: it runs the CLI with `-v` and turns the full output into the scored report, so what Claude does and what the user does at a prompt share one code path.
+
+IF `threat-hunt` is not on PATH → tell the user to run `~/Code/threat-hunt/install.sh` (or clone the repo to `~/Code/threat-hunt` first). Do not reimplement any of it here.
+
 ## Mode Routing
 
 | Invocation | What runs |
@@ -21,43 +27,30 @@ argument-hint: "[full | persistence | process | network | ioc | hardening | cred
 | `/threat-hunt persistence` | Persistence sweep only |
 | `/threat-hunt process` | Process integrity only |
 | `/threat-hunt network` | Network anomalies only |
-| `/threat-hunt ioc` | IOC matching only |
+| `/threat-hunt ioc` | IOC matching only (active DNS resolution — see OPSEC) |
 | `/threat-hunt hardening` | Hardening verification only |
 | `/threat-hunt credentials` | Credential & secret exposure only |
 
-## Scripts
+## Execution
 
-Base path: `~/.claude/skills/threat-hunt/scripts/`.
+One Bash call: `threat-hunt <mode> -v` (timeout 300000 ms; `full` takes ~45 s). `-v` streams every
+probe's output, delimited by `########## <name> ##########`, and closes with a RUN SUMMARY naming
+any probe that failed to complete, followed by the CLI's own findings digest. The full output is
+also saved to `~/.claude/threat-hunt-last.txt`; `Read` it instead of re-running if the call's
+output was truncated.
 
-**Run the mode in one call:** `bash ~/.claude/skills/threat-hunt/scripts/run_threat_hunt.sh <mode>`
-where `<mode>` is `full`, `persistence`, `process`, `network`, `ioc`, `hardening`, or `credentials`.
-The runner executes every script for that mode (~30 s for `full`), delimits each with
-`########## <name> ##########`, and closes with a RUN SUMMARY naming any script that failed to
-complete. Prefer it over invoking scripts one by one. Individual scripts remain runnable as
-`bash <base>/<script>.sh` when following up on a single finding.
+Probe lists per mode: `threat-hunt --list <mode>`. A single probe can be re-run when following up
+on one finding: `bash ~/Code/threat-hunt/scripts/<probe>.sh`. Shared helpers (IOC staleness,
+signature classification, plist target resolution, IP owner lookup) live in `scripts/_lib.sh`,
+which probes source and which is never run directly.
 
-**Persistence:** sweep_persistence, sweep_xpc_services, sweep_browser_extensions
-
-**Process Integrity:** check_dylib_injection, check_process_integrity, check_sip_amfi, check_temp_binaries
-
-**Network Anomalies:** scan_network_anomalies, scan_network_processes, scan_dns_c2
-
-**IOC Matching:** match_ioc_files, match_ioc_domains, match_ioc_processes, match_ioc_shutdown_log
-
-**Hardening:** verify_hardening
-
-**Credential & Secret Exposure:** scan_exposed_secrets, scan_crypto_wallets, scan_ssh_gpg_keys, scan_browser_credentials, scan_keychain_anomalies, scan_clipboard_exfil
-
-All scripts end in `exit 0`, so a non-zero exit means the script did not run to completion. Shared
-helpers (IOC staleness, signature classification, IP owner lookup) live in `_lib.sh`, which scripts
-source and which is never run directly.
-
-Scripts tag their own findings inline with `[CRITICAL]`/`[HIGH]`/`[MEDIUM]`/`[LOW]`/`[INFO]`. Carry
+Every probe ends in `exit 0`, so a non-zero exit means the script did not run to completion.
+Probes tag their own findings inline with `[CRITICAL]`/`[HIGH]`/`[MEDIUM]`/`[LOW]`/`[INFO]`. Carry
 those severities through to the report rather than re-deriving risk from raw output.
 
 ## Domain Notes
 
-- **IOC Staleness:** IOC files in `references/` are dated in the filename (`ioc_pegasus_2026-03-30.txt`). Every match script prints the date and age, tags `[MEDIUM]` at 30 days and `[CRITICAL]` at 90. Count the staleness deduction **once** in scoring, not once per script. A stale list that finds nothing means the IOC category is *unverified* — report it that way, never as clean. The internal `Last Updated` header of each file names the source publication date; the filename date is when the list was assembled here.
+- **IOC Staleness:** IOC files in `~/Code/threat-hunt/references/` are dated in the filename (`ioc_pegasus_2026-03-30.txt`). Every match script prints the date and age, tags `[MEDIUM]` at 30 days and `[CRITICAL]` at 90. Count the staleness deduction **once** in scoring, not once per script. A stale list that finds nothing means the IOC category is *unverified* — report it that way, never as clean. The internal `Last Updated` header of each file names the source publication date; the filename date is when the list was assembled here.
 - **Code Signatures:** shell scripts and interpreters can never be code-signed, so `sig_status` classifies the LaunchAgent target first: Mach-O → codesign verdict; script → group/other write bits (owner-writable is normal for your own automation and scores 0); unreadable root-only helper → say so. An unsigned Mach-O behind a LaunchAgent is HIGH. `DYLD_INSERT_LIBRARIES` in any plist is CRITICAL. A plist whose target no longer exists is an orphan (LOW) — remove it so a future file at that path is not executed at login.
 - **Persistence targets:** for `/bin/bash script.sh` or `python -m module` agents the thing classified is the script, not the Apple-signed interpreter (`resolve_plist_target`). An inline `-c` command or a plist with nothing readable is `[MEDIUM]`; a missing target is an orphan (`[LOW]`).
 - **Unresolvable processes:** `ps` reports a bare name for processes that rewrite their title (node apps, the Claude CLI). `check_process_integrity` and `scan_network_processes` resolve those through `lsof`'s txt mapping; anything still unresolved is listed under `[INFO]` as *not verified* — never counted as checked.
@@ -72,21 +65,21 @@ those severities through to the report rather than re-deriving risk from raw out
 - **Keychain access baseline:** ~30 events/hour idle on macOS 27 after excluding the `xpc` category and `makeUnlocked` chatter; the HIGH threshold is 100. Same predicate as `diagnose/check_keychain.sh`.
 - **Seed phrases:** the heuristic matches the BIP39 shape (exactly 12/15/18/21/24 words of 3–8 lowercase letters, nothing else on the line). Prose lines in vault notes no longer fire.
 - **Credential Scanning Safety:** NEVER print actual secret values, private keys, seed phrases, or passwords. Only report file path + pattern type matched.
-- **Overlap with /diagnose:** the two skills deliberately maintain *parallel* implementations of the persistence, credential, keychain, and IOC checks so each runs standalone. This duplication is intentional — do not consolidate it. diagnose covers commodity stealers; threat-hunt covers nation-state implants and keeps its own Pegasus/Candiru IOC sets.
+- **Overlap with /diagnose:** the two tools deliberately maintain *parallel* implementations of the persistence, credential, keychain, and IOC checks so each runs standalone. This duplication is intentional — do not consolidate it. diagnose covers commodity stealers; threat-hunt covers nation-state implants and keeps its own Pegasus/Candiru IOC sets.
 
 ## Compatibility
 Verified end to end on macOS 27.0 (26A428), Apple M3, 2026-09-21: 21/21 scripts complete in ~30 s under the runner with no false HIGHs on an idle machine.
 
 ## Output
 
-Format per `~/.claude/skills/threat-hunt/references/output_format.md`. Produce a Threat Hunt Score (X/100) for any mode. After the report, ask if the user wants help fixing issues.
+Format per `~/Code/threat-hunt/references/output_format.md`. Produce a Threat Hunt Score (X/100) for any mode. After the report, ask if the user wants help fixing issues.
 
 ## Safety
 
 - Never kill processes or disable security features without confirmation.
 - Mark Claude sessions and system processes (WindowServer, kernel_task, launchd, coreaudiod) as PROTECTED.
 - Never print actual secret values — only file paths and pattern types.
-- If any CRITICAL finding other than IOC staleness: print the incident response protocol from `references/incident_response_protocol.md`.
+- If any CRITICAL finding other than IOC staleness: print the incident response protocol from `~/Code/threat-hunt/references/incident_response_protocol.md`.
 - **Any** script the runner lists under INCOMPLETE SCRIPTS is reported as SKIPPED *by name*, and the category it feeds is scored as unverified, never as clean. This covers "Operation not permitted" and every other failure, including a script that never ran at all.
 - If IOC files are missing from `references/`: the match scripts print SKIPPED and continue; score the IOC category as unverified.
 
@@ -97,3 +90,5 @@ Format per `~/.claude/skills/threat-hunt/references/output_format.md`. Produce a
 - **`match_ioc_domains` slow:** dead IOC domains time out on resolution; `host -W 2` caps each at 2 s and only 25 are sampled.
 - **A probe exceeded 90 s:** the runner kills it and lists it as `(hung)`. Raise `THREAT_HUNT_PROBE_TIMEOUT` if the machine is under load.
 - **Refreshing IOCs:** save a new file under the same prefix with today's date (`ioc_pegasus_YYYY-MM-DD.txt`); the scripts pick the newest by name. Keep the `TYPE|VALUE|DESCRIPTION` format. Sources are named in each file's header; Amnesty's `AmnestyTech/investigations` repo publishes the Pegasus domain list.
+- **`threat-hunt: command not found`:** run `~/Code/threat-hunt/install.sh`; it symlinks into `~/.local/bin` and warns if that is not on PATH.
+- **Fixing a probe:** edit it in `~/Code/threat-hunt/scripts/` and commit there — this skill directory holds only this file.
