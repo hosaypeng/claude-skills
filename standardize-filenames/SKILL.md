@@ -40,6 +40,9 @@ The script handles mechanical transforms. The agent must also handle:
 - **Complex dates**: month names, content-based dates from PDFs.
 - **Noise removal**: watermarks, website tags, redundant publisher names.
 - **Semantic structuring**: periodical vs book vs article conventions (see conventions.md).
+- **Author separator** (the script's known blind spot): it flattens `Title - Author` into
+  `title_author`, dropping the `by`. For books, restore `_by_` — see rule 12 in conventions.md.
+  Never accept the script's output for a `Title - Author` filename without checking this.
 
 Add any agent-identified renames to the plan manually.
 
