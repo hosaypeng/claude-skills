@@ -25,7 +25,7 @@ It takes no arguments and sends no alerts. Every line starts with `OK`, `WARN`, 
 - **Path audit**: runs `audit-paths` — dead paths in CLAUDE.md, MEMORY.md, memory files, LaunchAgent plists.
 - **Recovery repo drift**: `brew leaves` / casks missing from the Brewfile; `~/Code` repos missing from or stale in `repos.txt`.
 - **Large log files**: any `.log` over 100MB under `~/Code`, `~/Jts`, `~/.claude`, `~/.hermes`, `~/.cache`.
-- **Claude config sync**: is `com.hsp.sync-claude-config` loaded; do `settings.json`, hooks and commands match the recovery repo?
+- **Claude config sync**: is `com.hosaypeng.agent-config-sync` loaded; do `CLAUDE.md`, `settings.json`, `statusline.sh`, hooks and commands in `~/.claude` match `~/Code/agent-config/claude/`? Its push failures surface as a non-zero exit in the LaunchAgents check.
 - **Security IOC lists**: age of every `ioc_*.txt` in `~/Code/diagnose/references` and `~/Code/threat-hunt/references`. WARN at 90 days — a stale list means that skill's IOC category is unverified.
 
 ## CLAUDE.md audit

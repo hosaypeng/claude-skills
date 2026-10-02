@@ -183,39 +183,30 @@ check_large_logs() {
   done <<< "$large_logs"
 }
 
+# ~/.claude is backed up to agent-config by LaunchAgent com.hosaypeng.agent-config-sync
+# (hourly + kickstarted by the claude-config-sync hook). A failed run shows up in the
+# LaunchAgents section as a non-zero exit; this checks the copies actually match.
 check_config_sync() {
   echo ""
-  echo "--- Claude Config Sync ---"
-  local live_hooks repo_hooks live_cmds repo_cmds
-  if [ ! -d "$RECOVERY/claude" ]; then
-    echo "SKIP: No claude/ dir in recovery repo"
+  echo "--- Claude Config Sync (agent-config) ---"
+  local repo="$HOME/Code/agent-config" drifted=() item
+  if [ ! -d "$repo/claude" ]; then
+    echo "FAIL: agent-config not found at $repo"
     return 0
   fi
-  if launchctl list "com.hsp.sync-claude-config" &>/dev/null; then
-    echo "OK: sync-claude-config agent loaded"
-  else
-    echo "FAIL: sync-claude-config agent not loaded"
+  if ! launchctl list "com.hosaypeng.agent-config-sync" &>/dev/null; then
+    echo "FAIL: com.hosaypeng.agent-config-sync not loaded — run agent-config/setup.sh"
   fi
-  if [ -f "$RECOVERY/claude/settings.json" ] && [ -f "$HOME/.claude/settings.json" ]; then
-    if diff -q "$RECOVERY/claude/settings.json" "$HOME/.claude/settings.json" &>/dev/null; then
-      echo "OK: settings.json in sync"
-    else
-      echo "WARN: settings.json has drifted (recovery repo != live)"
-    fi
-  fi
-  live_hooks=$(find "$HOME/.claude/hooks" -name "*.sh" 2>/dev/null | wc -l | tr -d ' ')
-  repo_hooks=$(find "$RECOVERY/claude/hooks" -name "*.sh" 2>/dev/null | wc -l | tr -d ' ')
-  if [ "$live_hooks" -ne "$repo_hooks" ]; then
-    echo "WARN: hooks count mismatch (live: $live_hooks, repo: $repo_hooks)"
+  for item in CLAUDE.md settings.json statusline.sh hooks commands; do
+    diff -rq -x '.DS_Store' -x '*.backup.*' "$HOME/.claude/$item" "$repo/claude/$item" &>/dev/null \
+      || drifted+=("$item")
+  done
+  if [ ${#drifted[@]} -eq 0 ]; then
+    echo "OK: CLAUDE.md, settings.json, statusline.sh, hooks, commands match agent-config"
   else
-    echo "OK: hooks in sync ($live_hooks scripts)"
-  fi
-  live_cmds=$(find "$HOME/.claude/commands" -name "*.md" 2>/dev/null | wc -l | tr -d ' ')
-  repo_cmds=$(find "$RECOVERY/claude/commands" -name "*.md" 2>/dev/null | wc -l | tr -d ' ')
-  if [ "$live_cmds" -ne "$repo_cmds" ]; then
-    echo "WARN: commands count mismatch (live: $live_cmds, repo: $repo_cmds)"
-  else
-    echo "OK: commands in sync ($live_cmds files)"
+    echo "WARN: live ~/.claude differs from agent-config: ${drifted[*]}"
+    echo "  (normal for up to an hour after a manual edit; otherwise check"
+    echo "   ~/Library/Logs/com.hosaypeng.agent-config-sync.err.log)"
   fi
 }
 
