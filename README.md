@@ -10,7 +10,6 @@ A collection of reusable skills for [Claude Code](https://docs.anthropic.com/en/
 | `audit-vault` | Audit Obsidian vault for broken wikilinks, invalid tags, and missing frontmatter |
 | `code-review` | Expert code review with senior engineer lens (SOLID, security, tests) |
 | `define-task` | Create well-defined autonomous task specs with acceptance criteria |
-| `diagnose` | Run system diagnostics: full, security, hardware, or network mode |
 | `edit-habit` | Add, remove, or rename habits in the Obsidian habit tracker |
 | `explain` | Explain a file, folder, or codebase with terminal output and HTML slide deck |
 | `extract-biodata` | Extract applicant biodata fields from PDFs into summary tables |

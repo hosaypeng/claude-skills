@@ -1,12 +1,12 @@
 ---
 name: health-check
-description: "Check system health across LaunchAgents, git repos, vault backup, habits pipeline, recovery-repo drift, and security IOC freshness. Only alerts on failures. Use when user says 'health check', 'is everything working', 'check my systems', or 'anything broken'."
+description: "Check system health across LaunchAgents, git repos, vault backup, habits pipeline, recovery-repo drift, and agent-config sync. Only alerts on failures. Use when user says 'health check', 'is everything working', 'check my systems', or 'anything broken'."
 user-invocable: true
 ---
 
 # Health Check
 
-`/health-check` = fast pass/fail sweep of your own automation (~5 s). `/diagnose` = deep hardware/security analysis.
+`/health-check` = fast pass/fail sweep of your own automation (~5 s).
 
 Run the script:
 
@@ -26,7 +26,6 @@ It takes no arguments and sends no alerts. Every line starts with `OK`, `WARN`, 
 - **Recovery repo drift**: `brew leaves` / casks missing from the Brewfile; `~/Code` repos missing from or stale in `repos.txt`.
 - **Large log files**: any `.log` over 100MB under `~/Code`, `~/Jts`, `~/.claude`, `~/.hermes`, `~/.cache`.
 - **Claude config sync**: is `com.hosaypeng.agent-config-sync` loaded; do `CLAUDE.md`, `settings.json`, `statusline.sh`, hooks and commands in `~/.claude` match `~/Code/agent-config/claude/`? Its push failures surface as a non-zero exit in the LaunchAgents check.
-- **Security IOC lists**: age of every `ioc_*.txt` in `~/Code/diagnose/references`. WARN at 90 days — a stale list means diagnose's IOC category is unverified.
 
 ## CLAUDE.md audit
 
@@ -50,7 +49,6 @@ After the script, manually verify both CLAUDE.md files:
   - dead paths → `/audit-paths`
   - Brewfile / repos.txt drift → edit the file in `~/Code/macos-recovery-setup`
   - large log → inspect, then trash or rotate it
-  - stale IOC list → refresh from the sources named in the file header, save under a new dated filename
 - A WARN for a repo you deliberately keep local-only (no remote) is informational; say so rather than nagging.
 
 ## Scheduling
