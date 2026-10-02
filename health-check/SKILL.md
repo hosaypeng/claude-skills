@@ -6,7 +6,7 @@ user-invocable: true
 
 # Health Check
 
-`/health-check` = fast pass/fail sweep of your own automation (~5 s). `/diagnose` = deep hardware/security analysis. `/threat-hunt` = nation-state and credential-theft hunt.
+`/health-check` = fast pass/fail sweep of your own automation (~5 s). `/diagnose` = deep hardware/security analysis.
 
 Run the script:
 
@@ -26,7 +26,7 @@ It takes no arguments and sends no alerts. Every line starts with `OK`, `WARN`, 
 - **Recovery repo drift**: `brew leaves` / casks missing from the Brewfile; `~/Code` repos missing from or stale in `repos.txt`.
 - **Large log files**: any `.log` over 100MB under `~/Code`, `~/Jts`, `~/.claude`, `~/.hermes`, `~/.cache`.
 - **Claude config sync**: is `com.hosaypeng.agent-config-sync` loaded; do `CLAUDE.md`, `settings.json`, `statusline.sh`, hooks and commands in `~/.claude` match `~/Code/agent-config/claude/`? Its push failures surface as a non-zero exit in the LaunchAgents check.
-- **Security IOC lists**: age of every `ioc_*.txt` in `~/Code/diagnose/references` and `~/Code/threat-hunt/references`. WARN at 90 days — a stale list means that skill's IOC category is unverified.
+- **Security IOC lists**: age of every `ioc_*.txt` in `~/Code/diagnose/references`. WARN at 90 days — a stale list means diagnose's IOC category is unverified.
 
 ## CLAUDE.md audit
 

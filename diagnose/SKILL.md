@@ -46,8 +46,8 @@ severities through to the report rather than re-deriving risk from raw output.
 - **DNS:** Flag non-standard servers (anything other than ISP default, 1.1.1.1, 8.8.8.8, 9.9.9.9, or known VPN DNS).
 - **App signatures:** Cross-reference against known developers in output_format.md. "Apple Development" or ad-hoc on commercial software = suspicious. `CSSMERR_TP_CERT_REVOKED` is more serious than a missing sealed resource: the former means the developer certificate was revoked, the latter often just means the app self-updated.
 - **Browsers:** `check_browser_credentials` covers Chrome, Brave, Helium (`net.imput.helium`, the primary browser here), Arc and Firefox. Add a `scan_browser` line for any new Chromium-family browser; the profile layout is shared.
-- **IOC staleness:** `check_malware_signatures` tags the stealer IOC list `[LOW]` only past 180 days (commodity paths rotate too fast for a tighter bound to mean much); threat-hunt uses 30/90 for its nation-state lists. `/health-check` warns on either at 90 days.
-- **Overlap with /threat-hunt:** the two tools deliberately maintain *parallel* implementations of the persistence, credential, keychain, and IOC checks so each runs standalone. This duplication is intentional - do not consolidate it. diagnose covers commodity stealers; threat-hunt covers nation-state implants and keeps its own Pegasus/Candiru IOC sets. threat-hunt's `_lib.sh` `sig_status` and keychain predicate were ported *from* diagnose on 2026-09-21; keep the two in step when either changes.
+- **IOC staleness:** `check_malware_signatures` tags the stealer IOC list `[LOW]` only past 180 days (commodity paths rotate too fast for a tighter bound to mean much). `/health-check` warns on it at 90 days.
+- **Scope:** commodity stealers only. There is no nation-state IOC set (Pegasus, Candiru); the separate threat-hunt tool that held one was deleted on 2026-10-02.
 
 ## Compatibility
 Verified end to end on macOS 27.0 (26A428), Apple M3, 2026-09-16. Safari prefs are read from the app container, kexts via `kmutil`, crash reports as `.ips`, battery from `BatteryData`, and absent SoftwareUpdate keys mean the default (enabled).
