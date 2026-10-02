@@ -8,7 +8,6 @@ A collection of reusable skills for [Claude Code](https://docs.anthropic.com/en/
 |-------|-------------|
 | `analyze-page` | Fetch and analyze full webpage content without summarization loss |
 | `audit-vault` | Audit Obsidian vault for broken wikilinks, invalid tags, and missing frontmatter |
-| `cleanup` | Remove Claude session artifacts, system caches, or forensic app traces |
 | `code-review` | Expert code review with senior engineer lens (SOLID, security, tests) |
 | `define-task` | Create well-defined autonomous task specs with acceptance criteria |
 | `diagnose` | Run system diagnostics: full, security, hardware, or network mode |

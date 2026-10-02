@@ -49,7 +49,7 @@ After the script, manually verify both CLAUDE.md files:
   - stale habits.json → `/update-habits`
   - dead paths → `/audit-paths`
   - Brewfile / repos.txt drift → edit the file in `~/Code/macos-recovery-setup`
-  - large log → inspect, then trash or rotate it (`/cleanup` does not touch logs under `~/Code`)
+  - large log → inspect, then trash or rotate it
   - stale IOC list → refresh from the sources named in the file header, save under a new dated filename
 - A WARN for a repo you deliberately keep local-only (no remote) is informational; say so rather than nagging.
 
@@ -61,7 +61,6 @@ Not scheduled. It runs only when invoked. To run it daily, create a LaunchAgent 
 
 - **`/git-status`** — repo-by-repo detail (stale branches, dirty trees). Health-check only counts.
 - **`/audit-paths`** — the dead-path table with suggested fixes.
-- **`/cleanup`** — orphaned LaunchAgents surfaced here are handled by `cleanup forensic`.
 
 ## Troubleshooting
 
