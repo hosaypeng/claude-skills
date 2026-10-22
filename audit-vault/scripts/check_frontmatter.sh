@@ -38,32 +38,39 @@ check_fields() {
   fi
 }
 
-# 31_articles: tags, title, source, author, published, created
-echo "--- 31_articles/ ---"
-article_count=0
-while IFS= read -r -d '' file; do
-  basename=$(basename "$file")
-  [ "$basename" = "_index.md" ] && continue
-  check_fields "$file" tags title source author published created
-  article_count=$((article_count + 1))
-done < <(find "$VAULT/31_articles" -name '*.md' -maxdepth 1 -print0 2>/dev/null)
-echo "Checked $article_count files in 31_articles/"
-echo ""
+require_dir() {
+  if [ ! -d "$1" ]; then
+    echo "[ERROR] Expected folder not found: ${1#"$VAULT"/}"
+    exit 1
+  fi
+}
 
-# 30_notes: tags
-echo "--- 30_notes/ ---"
+require_dir "$VAULT/30_knowledge"
+require_dir "$VAULT/00_inbox"
+
+# 30_knowledge (all subfolders): files with a source field are articles
+# (tags, title, source, author, published, created); the rest are notes (tags, description, type, status).
+# Reference notes (type: reference) and AI-generated notes (origin: ai) are always checked as notes.
+echo "--- 30_knowledge/ ---"
+article_count=0
 note_count=0
 while IFS= read -r -d '' file; do
   basename=$(basename "$file")
   [ "$basename" = "_index.md" ] && continue
-  check_fields "$file" tags description type status
-  note_count=$((note_count + 1))
-done < <(find "$VAULT/30_notes" -name '*.md' -maxdepth 1 -print0 2>/dev/null)
-echo "Checked $note_count files in 30_notes/"
+  frontmatter=$(awk 'BEGIN{f=0} /^---$/{f++; if(f==2) exit; next} f==1{print}' "$file")
+  if echo "$frontmatter" | grep -qE '^source:' && ! echo "$frontmatter" | grep -qE '^(type: *reference|origin: *ai)'; then
+    check_fields "$file" tags title source author published created
+    article_count=$((article_count + 1))
+  else
+    check_fields "$file" tags description type status
+    note_count=$((note_count + 1))
+  fi
+done < <(find "$VAULT/30_knowledge" -name '*.md' -print0)
+echo "Checked $article_count articles and $note_count notes in 30_knowledge/"
 
 # Check for summary on long notes
 echo ""
-echo "--- 30_notes/ summary check (notes > 200 lines) ---"
+echo "--- 30_knowledge/ summary check (hand-written notes > 200 lines) ---"
 summary_issues=0
 while IFS= read -r -d '' file; do
   basename=$(basename "$file")
@@ -71,6 +78,10 @@ while IFS= read -r -d '' file; do
   line_count=$(wc -l < "$file" | tr -d ' ')
   if [ "$line_count" -gt 200 ]; then
     frontmatter=$(awk 'BEGIN{f=0} /^---$/{f++; if(f==2) exit; next} f==1{print}' "$file")
+    # Articles (source) and AI-generated notes (origin: ai) don't carry a hand-written summary
+    if echo "$frontmatter" | grep -qE '^(source:|origin: *ai)'; then
+      continue
+    fi
     if ! echo "$frontmatter" | grep -qE '^summary:'; then
       rel_path="${file#"$VAULT"/}"
       echo "[MISSING] $rel_path: Note has $line_count lines but no summary field"
@@ -78,7 +89,7 @@ while IFS= read -r -d '' file; do
       summary_issues=$((summary_issues + 1))
     fi
   fi
-done < <(find "$VAULT/30_notes" -name '*.md' -maxdepth 1 -print0 2>/dev/null)
+done < <(find "$VAULT/30_knowledge" -name '*.md' -print0)
 echo "$summary_issues long notes missing summary."
 echo ""
 
