@@ -19,7 +19,7 @@ Run a deep financial and behavioral analysis using the latest master CSV data an
      3. Try running `/personal-finance-update` again
      4. If still failing, proceed with whatever data is already on disk and note the staleness in the report
 2. Read `~/.claude/skills/finance-analysis/config.json` to get paths for `obsidian_note` and `memory_file`.
-3. Read the Obsidian note and memory file at the configured paths.
+3. Read the Obsidian note at the configured path, and the memory file if it exists (it may not; continue without it).
 
 ---
 
