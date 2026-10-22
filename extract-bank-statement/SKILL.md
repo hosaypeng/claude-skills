@@ -27,14 +27,14 @@ Use when the user says:
 
 ### Savings account — single file
 ```bash
-python3 ~/.claude/skills/extract-bank-statement/scripts/extract_trust_bank_savings.py \
+python3.14 ~/.claude/skills/extract-bank-statement/scripts/extract_trust_bank_savings.py \
   /path/to/statement.pdf \
   /path/to/output.csv
 ```
 
 ### Credit card — single file
 ```bash
-python3 ~/.claude/skills/extract-bank-statement/scripts/extract_trust_bank_cc.py \
+python3.14 ~/.claude/skills/extract-bank-statement/scripts/extract_trust_bank_cc.py \
   /path/to/statement.pdf \
   /path/to/output.csv
 ```
@@ -46,7 +46,7 @@ Omit the output path on either script to print to stdout (useful for preview).
 SCRIPT=~/.claude/skills/extract-bank-statement/scripts/extract_trust_bank_cc.py
 for f in /path/to/statements/pdf/*.pdf; do
   name=$(basename "$f" .pdf)
-  python3 "$SCRIPT" "$f" "/path/to/output/${name}.csv"
+  python3.14 "$SCRIPT" "$f" "/path/to/output/${name}.csv"
 done
 ```
 
@@ -89,9 +89,9 @@ Credit card outputs 9 columns — the 7 pipeline columns plus 2 supplementary FC
 
 ## Dependency
 
-Requires `pymupdf`:
+Requires `pymupdf` in Homebrew's python@3.14 (bare `python3` is the system 3.9, which can't run the scripts). Check with `python3.14 -c 'import fitz'`. To reinstall (python@3.14 is externally managed):
 ```bash
-pip install pymupdf
+python3.14 -m pip install --break-system-packages pymupdf
 ```
 
 ## Workflow Integration
