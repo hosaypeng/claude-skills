@@ -170,7 +170,7 @@ check_large_logs() {
   echo ""
   echo "--- Large Log Files ---"
   local large_logs logfile size human
-  large_logs=$(find "$HOME/Code" "$HOME/Jts" "$HOME/.claude" "$HOME/.hermes" "$HOME/.cache" \
+  large_logs=$(find "$HOME/Code" "$HOME/Jts" "$HOME/.claude" "$HOME/.cache" \
     -name "*.log" -size +100M 2>/dev/null)
   if [ -z "$large_logs" ]; then
     echo "OK: No log files over 100MB"

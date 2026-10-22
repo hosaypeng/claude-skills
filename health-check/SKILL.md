@@ -24,7 +24,7 @@ It takes no arguments and sends no alerts. Every line starts with `OK`, `WARN`, 
 - **Habits pipeline**: is `habits.json` in the GitHub Pages repo older than the newest `all_habits*.md` in the vault? Age alone is not a failure — an untouched source means there is nothing to push.
 - **Path audit**: runs `audit-paths` — dead paths in CLAUDE.md, MEMORY.md, memory files, LaunchAgent plists.
 - **Recovery repo drift**: `brew leaves` / casks missing from the Brewfile; `~/Code` repos missing from or stale in `repos.txt`.
-- **Large log files**: any `.log` over 100MB under `~/Code`, `~/Jts`, `~/.claude`, `~/.hermes`, `~/.cache`.
+- **Large log files**: any `.log` over 100MB under `~/Code`, `~/Jts`, `~/.claude`, `~/.cache`.
 - **Claude config sync**: is `com.hosaypeng.agent-config-sync` loaded; do `CLAUDE.md`, `settings.json`, `statusline.sh`, hooks and commands in `~/.claude` match `~/Code/agent-config/claude/`? Its push failures surface as a non-zero exit in the LaunchAgents check.
 
 ## CLAUDE.md audit
