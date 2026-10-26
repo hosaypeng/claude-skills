@@ -1,6 +1,6 @@
 ---
 name: health-check
-description: "Check system health across LaunchAgents, git repos, vault backup, habits pipeline, recovery-repo drift, and agent-config sync. Only alerts on failures. Use when user says 'health check', 'is everything working', 'check my systems', or 'anything broken'."
+description: "Check system health across LaunchAgents, git repos, vault backup, recovery-repo drift, and agent-config sync. Only alerts on failures. Use when user says 'health check', 'is everything working', 'check my systems', or 'anything broken'."
 user-invocable: true
 ---
 
@@ -21,7 +21,6 @@ It takes no arguments and sends no alerts. Every line starts with `OK`, `WARN`, 
 - **LaunchAgents**: every user-installed agent in `~/Library/LaunchAgents` (Apple, Google and Homebrew plists are skipped). Reports not-loaded agents as FAIL and a non-zero last exit status as WARN — a crashing agent is otherwise invisible.
 - **Git repos**: uncommitted or unpushed changes in `~/Code/*`, the vault (`~/Documents/obsidian`) and `~/.claude/skills`. A repo with no upstream is reported as `no-upstream`, never as clean.
 - **Vault**: is `~/Documents/obsidian` accessible, note count.
-- **Habits pipeline**: is `habits.json` in the GitHub Pages repo older than the newest `all_habits*.md` in the vault? Age alone is not a failure — an untouched source means there is nothing to push.
 - **Path audit**: runs `audit-paths` — dead paths in CLAUDE.md, MEMORY.md, memory files, LaunchAgent plists.
 - **Recovery repo drift**: `brew leaves` / casks missing from the Brewfile; `~/Code` repos missing from or stale in `repos.txt`.
 - **Large log files**: any `.log` over 100MB under `~/Code`, `~/Jts`, `~/.claude`, `~/.cache`.
@@ -45,7 +44,6 @@ After the script, manually verify both CLAUDE.md files:
   - not-loaded agent → `launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/<name>.plist`
   - agent with non-zero exit → read its StandardErrorPath log, then decide whether to fix or `launchctl bootout` it
   - unpushed / uncommitted → `git -C <repo> push` or commit; `no-upstream` → `git push -u origin <branch>`
-  - stale habits.json → `/update-habits`
   - dead paths → `/audit-paths`
   - Brewfile / repos.txt drift → edit the file in `~/Code/macos-recovery-setup`
   - large log → inspect, then trash or rotate it

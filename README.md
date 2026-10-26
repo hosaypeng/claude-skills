@@ -22,7 +22,6 @@ A collection of reusable skills for [Claude Code](https://docs.anthropic.com/en/
 | `snapshot-env` | Capture a reproducible environment snapshot with exact versions |
 | `standardize-filenames` | Standardize filenames to lowercase snake_case with ISO dates |
 | `track-cost` | Analyze Claude agent resource usage and token consumption patterns |
-| `update-habits` | Parse habits from Obsidian and push updated heatmap to GitHub Pages |
 
 ## Directory Convention
 

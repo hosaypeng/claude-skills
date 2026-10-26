@@ -78,29 +78,6 @@ check_vault() {
   fi
 }
 
-check_habits() {
-  echo ""
-  echo "--- Habits Pipeline ---"
-  # The pipeline is stale only when the vault source is newer than the published JSON.
-  # Age alone flagged a 164-day-old habits.json whose source had not changed since April,
-  # and told the user to run a push that would publish nothing.
-  local habits_json="$HOME/Code/hosaypeng.github.io/_data/habits.json" src src_age json_age
-  if [ ! -f "$habits_json" ]; then
-    echo "FAIL: habits.json not found"
-    return 0
-  fi
-  src=$(ls -t "$VAULT"/50_areas/personal/all_habits*.md 2>/dev/null | head -1)
-  json_age=$(( ($(date +%s) - $(stat -f %m "$habits_json")) / 86400 ))
-  if [ -z "$src" ]; then
-    echo "WARN: no all_habits*.md found in the vault (habits.json is ${json_age} days old)"
-  elif [ "$(stat -f %m "$src")" -gt "$(stat -f %m "$habits_json")" ]; then
-    src_age=$(( ($(date +%s) - $(stat -f %m "$src")) / 86400 ))
-    echo "WARN: $(basename "$src") edited ${src_age} days ago but habits.json is ${json_age} days old (run /update-habits)"
-  else
-    echo "OK: habits.json (${json_age} days old) is newer than $(basename "$src")"
-  fi
-}
-
 check_paths() {
   echo ""
   echo "--- Path Audit ---"
@@ -213,7 +190,6 @@ check_config_sync() {
 check_launchagents
 check_git_repos
 check_vault
-check_habits
 check_paths
 check_recovery_drift
 check_large_logs
