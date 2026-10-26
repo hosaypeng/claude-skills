@@ -6,21 +6,14 @@ A collection of reusable skills for [Claude Code](https://docs.anthropic.com/en/
 
 | Skill | Description |
 |-------|-------------|
-| `analyze-page` | Fetch and analyze full webpage content without summarization loss |
+| `audit-paths` | Scan CLAUDE.md, memory files and LaunchAgent plists for dead file and directory paths |
 | `audit-vault` | Audit Obsidian vault for broken wikilinks, invalid tags, and missing frontmatter |
-| `code-review` | Expert code review with senior engineer lens (SOLID, security, tests) |
-| `define-task` | Create well-defined autonomous task specs with acceptance criteria |
-| `explain` | Explain a file, folder, or codebase with terminal output and HTML slide deck |
-| `extract-biodata` | Extract applicant biodata fields from PDFs into summary tables |
 | `git-status` | Scan all local git repos for uncommitted changes and unpushed commits |
+| `health-check` | Pass/fail sweep of LaunchAgents, git repos, vault, recovery-repo drift and config sync |
 | `persist-state` | Save current agent work state for resumable workflows |
+| `personal-finance-update` | Run the finance pipeline and update stale tables in the Obsidian finance note |
 | `push` | Commit staged changes and push to GitHub remote |
-| `recover` | Analyze agent failures and provide recovery strategies with rollback |
-| `require-approval` | Create structured approval checkpoints for high-stakes decisions |
-| `setup-benchmarks` | Scaffold testing and benchmark infrastructure for a project |
-| `snapshot-env` | Capture a reproducible environment snapshot with exact versions |
-| `standardize-filenames` | Standardize filenames to lowercase snake_case with ISO dates |
-| `track-cost` | Analyze Claude agent resource usage and token consumption patterns |
+| `update-dependencies` | Sweep dependency paths after vault moves, renames and deletions |
 
 ## Directory Convention
 
