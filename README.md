@@ -11,7 +11,6 @@ A collection of reusable skills for [Claude Code](https://docs.anthropic.com/en/
 | `git-status` | Scan all local git repos for uncommitted changes and unpushed commits |
 | `health-check` | Pass/fail sweep of LaunchAgents, git repos, vault, recovery-repo drift and config sync |
 | `persist-state` | Save current agent work state for resumable workflows |
-| `personal-finance-update` | Run the finance pipeline and update stale tables in the Obsidian finance note |
 | `push` | Commit staged changes and push to GitHub remote |
 | `update-dependencies` | Sweep dependency paths after vault moves, renames and deletions |
 
