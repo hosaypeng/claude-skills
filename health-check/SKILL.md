@@ -31,7 +31,7 @@ It takes no arguments and sends no alerts. Every line starts with `OK`, `WARN`, 
 After the script, manually verify both CLAUDE.md files:
 
 1. **`~/.claude/CLAUDE.md`** — Check that any referenced skill names still exist in `~/.claude/skills/`.
-2. **Vault `CLAUDE.md`** — For each concrete path referenced (vault dirs, templates, quick references, related repos):
+2. **Vault `CLAUDE.md`** — For each concrete path referenced (vault dirs, templates, quick references):
    - Verify the path exists on disk
    - Verify the tag list matches `40_indexes/*.md` (excluding `_index.md`)
    - Verify template names match `templates/*.md`
