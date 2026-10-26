@@ -10,6 +10,7 @@ A collection of reusable skills for [Claude Code](https://docs.anthropic.com/en/
 | `audit-vault` | Audit Obsidian vault for broken wikilinks, invalid tags, and missing frontmatter |
 | `git-status` | Scan all local git repos for uncommitted changes and unpushed commits |
 | `health-check` | Pass/fail sweep of LaunchAgents, git repos, vault, recovery-repo drift and config sync |
+| `ocr` | OCR a scanned PDF or image locally with GLM-OCR (Ollama) into a Markdown file |
 | `persist-state` | Save current agent work state for resumable workflows |
 | `push` | Commit staged changes and push to GitHub remote |
 | `update-dependencies` | Sweep dependency paths after vault moves, renames and deletions |
