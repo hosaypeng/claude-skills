@@ -20,6 +20,8 @@ All scripts in `scripts/` must:
 - Write errors to stderr (`>&2`)
 - Exit with non-zero on failure
 
+Python scripts are allowed if stdlib-only, Python 3.9-compatible, and invoked as `python3 -B -I` (from a bash wrapper or SKILL.md).
+
 ### SKILL.md Structure
 
 ```yaml
