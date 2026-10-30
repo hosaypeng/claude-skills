@@ -1,6 +1,6 @@
 ---
 name: clean-caches
-description: "Report and clear regenerable app caches (browser caches, uv, Homebrew, Zoom, Google Drive logs, the Claude desktop Cowork VM image) with the clean_caches command. Use when user says 'clean caches', 'clear cache', 'check for cache buildup', 'free up disk space', 'what's taking up space', or 'cache audit'."
+description: "Report and clear regenerable app caches (browser caches, Homebrew, Zoom, Google Drive logs, the Claude desktop Cowork VM image) with the clean_caches command. Use when user says 'clean caches', 'clear cache', 'check for cache buildup', 'free up disk space', 'what's taking up space', or 'cache audit'."
 user-invocable: true
 argument-hint: "[report|run|scan] [--cowork]"
 ---
@@ -15,7 +15,6 @@ argument-hint: "[report|run|scan] [--cowork]"
    - `ready`
    - `ready (quits Drive, relaunches it)`
    - `skip: quit <App> first`
-   - `skip: locked by N uvx process(es)`
    - `skip: no rootfs.img.zst to rebuild from`
    - `opt-in: run --cowork`
    - `in-app: <where to clear it>`
@@ -46,7 +45,7 @@ argument-hint: "[report|run|scan] [--cowork]"
 
 ## Notes
 
-- **uv cache:** stays locked while any Claude Code session runs uvx-based MCP servers. Clear it from a plain terminal after quitting those sessions. Clearing it under running uvx servers deletes their environment files, so restart those sessions afterwards.
+- **uv:** uninstalled, so the command skips its row. If uv comes back, its cache is locked while any session runs uvx MCP servers: clear it from a plain terminal after quitting them.
 - **Cowork VM image:** the app rebuilds it from `rootfs.img.zst` the next time Cowork runs, so the space comes back.
 - **Regrowth:** browser caches regrow within days, so the gain is temporary.
 - **Sizes:** they are upper bounds (APFS clones share blocks), so the `freed` line is usually smaller than the ready total.
