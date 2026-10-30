@@ -174,12 +174,12 @@ check_config_sync() {
   if ! launchctl list "com.hosaypeng.agent-config-sync" &>/dev/null; then
     echo "FAIL: com.hosaypeng.agent-config-sync not loaded — run agent-config/setup.sh"
   fi
-  for item in CLAUDE.md settings.json statusline.sh hooks commands; do
+  for item in CLAUDE.md settings.json statusline.sh hooks; do
     diff -rq -x '.DS_Store' -x '*.backup.*' "$HOME/.claude/$item" "$repo/claude/$item" &>/dev/null \
       || drifted+=("$item")
   done
   if [ ${#drifted[@]} -eq 0 ]; then
-    echo "OK: CLAUDE.md, settings.json, statusline.sh, hooks, commands match agent-config"
+    echo "OK: CLAUDE.md, settings.json, statusline.sh, hooks match agent-config"
   else
     echo "WARN: live ~/.claude differs from agent-config: ${drifted[*]}"
     echo "  (normal for up to an hour after a manual edit; otherwise check"

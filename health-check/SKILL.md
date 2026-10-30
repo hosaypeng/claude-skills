@@ -24,7 +24,7 @@ It takes no arguments and sends no alerts. Every line starts with `OK`, `WARN`, 
 - **Path audit**: runs `audit-paths` — dead paths in CLAUDE.md, MEMORY.md, memory files, LaunchAgent plists.
 - **Recovery repo drift**: `brew leaves` / casks missing from the Brewfile; `~/Code` repos missing from or stale in `repos.txt`.
 - **Large log files**: any `.log` over 100MB under `~/Code`, `~/Jts`, `~/.claude`, `~/.cache`.
-- **Claude config sync**: is `com.hosaypeng.agent-config-sync` loaded; do `CLAUDE.md`, `settings.json`, `statusline.sh`, hooks and commands in `~/.claude` match `~/Code/agent-config/claude/`? Its push failures surface as a non-zero exit in the LaunchAgents check.
+- **Claude config sync**: is `com.hosaypeng.agent-config-sync` loaded; do `CLAUDE.md`, `settings.json`, `statusline.sh` and hooks in `~/.claude` match `~/Code/agent-config/claude/`? Its push failures surface as a non-zero exit in the LaunchAgents check.
 
 ## CLAUDE.md audit
 
