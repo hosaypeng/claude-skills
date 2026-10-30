@@ -23,7 +23,6 @@ cannot see moves of ignored files.
 from __future__ import annotations
 
 import argparse
-import ast
 import bisect
 import difflib
 import glob
@@ -39,7 +38,6 @@ from typing import Dict, List, Optional, Set, Tuple
 
 HOME = Path.home()
 CANON_VAULT = HOME / "Documents" / "obsidian"
-INDEXER = HOME / "Code" / "vault-rag" / "index_vault.py"
 DEFAULT_SINCE = "2 days ago"
 SIMILARITY = 0.5
 SIMILARITY_PAIR_LIMIT = 4000
@@ -60,8 +58,6 @@ SOURCE_PATTERNS = [
   "~/.claude/skills/*/scripts/*",
   "~/Library/LaunchAgents/*.plist",
   "~/Code/agent-config/bin/*",
-  "~/Code/vault-rag/*.py",
-  "~/Code/vault-rag/README.md",
   "~/Code/macos-recovery-setup/RECOVERY.md",
   "~/.claude/projects/%s/memory/*.md" % str(CANON_VAULT).replace("/", "-"),
 ]
@@ -135,7 +131,6 @@ class Report:
   external: List[str] = field(default_factory=list)
   links: List[str] = field(default_factory=list)
   dups: List[str] = field(default_factory=list)
-  coverage: List[str] = field(default_factory=list)
   standing: List[str] = field(default_factory=list)
   notes: List[str] = field(default_factory=list)
 
@@ -164,10 +159,6 @@ def link_path(rel: str) -> str:
 
 def link_name(rel: str) -> str:
   return link_path(rel).split("/")[-1]
-
-
-def top_dir(rel: str) -> str:
-  return rel.split("/")[0]
 
 
 # ------------------------------------------------------------------------ git
@@ -860,7 +851,7 @@ def link_rewrites(links: List[LinkRef], moves: List[Move],
   return rows
 
 
-# ----------------------------------------------------- duplicates and coverage
+# ----------------------------------------------------------------- duplicates
 
 
 def winner(paths: List[str]) -> str:
@@ -886,49 +877,6 @@ def duplicate_risks(moves: List[Move], suffixes: Dict[str, List[str]], bare: Cou
     rows.append("  %s shares its name with %s  [%s; %d bare [[%s]] link(s); "
                 "shortest path now wins: %s]" % (m.new, ", ".join(others), why, count,
                                                   link_name(m.new), winner(others + [m.new])))
-  return rows
-
-
-def parse_dirs_to_index(path: Path) -> Optional[List[str]]:
-  try:
-    tree = ast.parse(path.read_text(encoding="utf-8"))
-  except (OSError, SyntaxError, ValueError):
-    return None
-  for node in ast.walk(tree):
-    if isinstance(node, ast.Assign):
-      targets = node.targets
-    elif isinstance(node, ast.AnnAssign):
-      targets = [node.target]
-    else:
-      continue
-    if any(isinstance(t, ast.Name) and t.id == "DIRS_TO_INDEX" for t in targets) and node.value:
-      try:
-        value = ast.literal_eval(node.value)
-      except ValueError:
-        return None
-      if isinstance(value, (list, tuple)) and all(isinstance(v, str) for v in value):
-        return list(value)
-  return None
-
-
-def vault_rag_coverage(vault: Path, moves: List[Move], standing: List[str],
-                       notes: List[str]) -> List[str]:
-  indexed = parse_dirs_to_index(INDEXER)
-  if indexed is None:
-    notes.append("could not read DIRS_TO_INDEX from %s" % tilde(str(INDEXER)))
-    return []
-  rows = ["  DIRS_TO_INDEX lists %s but the vault has no such directory" % d
-          for d in indexed if not (vault / d).is_dir()]
-  tops = sorted(d.name for d in vault.iterdir() if d.is_dir() and visible(d.name))
-  left: Counter = Counter()
-  for m in moves:
-    if m.new and not m.absolute and top_dir(m.old) in indexed and top_dir(m.new) not in indexed:
-      left[top_dir(m.new)] += 1
-  rows += ["  %d moved file(s) now sit in %s, which vault-rag does not index (they drop "
-           "out of search)" % (n, d) for d, n in sorted(left.items())]
-  unindexed = [d for d in tops if d not in indexed]
-  if unindexed:
-    standing.append("  top-level dirs not in DIRS_TO_INDEX: %s" % ", ".join(unindexed))
   return rows
 
 
@@ -966,7 +914,6 @@ def render(rep: Report, show_all: bool) -> str:
     ("External references to old paths (fix manually)", rep.external, "none"),
     ("Wikilinks to update (proposed old -> new)", rep.links, "none"),
     ("Duplicate-basename risks", rep.dups, "none"),
-    ("vault-rag coverage", rep.coverage, "none"),
   ]
   for title, rows, empty in sections:
     out += ["", "## " + title] + (clip(rows, show_all) if rows else ["  " + empty])
@@ -974,7 +921,7 @@ def render(rep: Report, show_all: bool) -> str:
     out += ["", "## Standing checks (informational, do not affect 'All clear')"] + rep.standing
   if rep.notes:
     out += ["", "## Notes"] + ["  " + n for n in rep.notes]
-  findings = rep.external or rep.links or rep.dups or rep.coverage
+  findings = rep.external or rep.links or rep.dups
   out += ["", "" if findings else "All clear: nothing points at an old path."]
   return "\n".join(out).rstrip() + "\n"
 
@@ -1005,7 +952,6 @@ def build_report(args: argparse.Namespace) -> Report:
   rep.links = link_rewrites(links, moves, suffixes)
   bare = Counter(t.strip().lower() for _f, _n, _b, t, _r in links if "/" not in t)
   rep.dups = duplicate_risks(moves, suffixes, bare)
-  rep.coverage = vault_rag_coverage(vault, moves, rep.standing, rep.notes)
   icloud = find_icloud(sources)
   if icloud:
     rep.standing.insert(0, "  %s still appears in:" % ICLOUD_MARK)

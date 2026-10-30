@@ -1,7 +1,7 @@
 ---
 user-invocable: true
 name: update-dependencies
-description: "After moving, renaming or deleting notes or folders in the Obsidian vault, find everything that still points at the old paths: AGENTS/CLAUDE files, hooks, scripts, LaunchAgents, memory, wikilinks and the vault-rag index. Use when user says 'update vault dependencies', 'I moved notes', 'I renamed notes', 'sweep vault deps', or 'after vault restructure'."
+description: "After moving, renaming or deleting notes or folders in the Obsidian vault, find everything that still points at the old paths: AGENTS/CLAUDE files, hooks, scripts, LaunchAgents, memory and wikilinks. Use when user says 'update vault dependencies', 'I moved notes', 'I renamed notes', 'sweep vault deps', or 'after vault restructure'."
 argument-hint: "[--ref <rev> | --since <date>] [--move OLD NEW]"
 ---
 
@@ -22,7 +22,7 @@ Show the report as printed. The script is read-only (git plumbing only, it never
 - `--move OLD NEW` adds a move git cannot see (repeatable). `NEW` of `-` means deleted. An absolute `OLD` covers a relocated vault root.
 - `--all` lifts the 60-line cap on long lists. `--vault <dir>` points at another checkout.
 
-Sections: What moved; External references (`file:line` in AGENTS/CLAUDE files, hooks, `settings.json`, other skills, `agent-config/bin`, `vault-rag`, LaunchAgent plists, memory); Wikilinks to update (including bare `[[name]]` links that now silently resolve to a different note); Duplicate-basename risks; vault-rag coverage; Standing checks (informational, shown on every run: leftover paths of the old iCloud vault and top-level dirs outside `DIRS_TO_INDEX`). `All clear` ignores the standing checks.
+Sections: What moved; External references (`file:line` in AGENTS/CLAUDE files, hooks, `settings.json`, other skills, `agent-config/bin`, LaunchAgent plists, memory); Wikilinks to update (including bare `[[name]]` links that now silently resolve to a different note); Duplicate-basename risks; Standing checks (informational, shown on every run: leftover paths of the old iCloud vault). `All clear` ignores the standing checks.
 
 ## 2. Run the existing audits
 
@@ -35,11 +35,7 @@ bash ~/.claude/skills/audit-paths/scripts/audit_paths.sh all
 
 `links` reports broken wikilinks and duplicate basenames across the whole vault. audit-paths reports dead paths in CLAUDE.md, memory and LaunchAgent plists.
 
-## 3. Refresh the search index
-
-Tell the user to run `~/Code/agent-config/bin/vault-rag-index.sh`. It prunes stale paths itself and also runs daily at 04:00, but semantic search shows old paths until then. Never edit `~/Code/vault-rag/index_state.json` by hand.
-
-## 4. Rewrite wikilinks (only after explicit confirmation)
+## 3. Rewrite wikilinks (only after explicit confirmation)
 
 Show the "Wikilinks to update" list and ask first. Proposals marked `[ambiguous]` need the user's pick. Then:
 
