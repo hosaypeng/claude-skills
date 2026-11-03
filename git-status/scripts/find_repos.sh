@@ -40,7 +40,7 @@ find "$HOME" -name ".git" -maxdepth 5 -type d \
   -not -path "*/.Spotlight-*/*" \
   -not -path "*/com~apple~CloudDocs/*" \
   -not -path "*/.icloud/*" \
-  2>/dev/null
+  2>/dev/null || true  # unreadable dirs make find exit 1; under set -e that drops the vault line
 
 # The vault lives in iCloud (under the excluded Library/) behind the ~/Documents/obsidian
 # symlink, and its .git is a gitdir file, so the find above can never see it.

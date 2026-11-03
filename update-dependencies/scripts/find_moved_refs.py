@@ -49,8 +49,9 @@ MAX_SOURCE_BYTES = 1_000_000
 # container root used as the vault (the pre-move layout) is stale, in path or
 # Claude memory-key form.
 ICLOUD_ROOT = re.compile(
-  r"iCloud~md~obsidian/Documents(?!/(?:obsidian|journal)\b|/\{)"
-  r"|-iCloud-md-obsidian-Documents(?!-(?:obsidian|journal)\b)"
+  # Inner lookahead rejects near-misses: obsidian-old, obsidian.bak, iCloud's "obsidian 2"
+  r"iCloud~md~obsidian/Documents(?!/(?:obsidian|journal)(?!\w|[.\-]\w| \d)|/\{)"
+  r"|-iCloud-md-obsidian-Documents(?!-(?:obsidian|journal)(?!\w|[.\-]\w))"
 )
 ICLOUD_LABEL = "iCloud~md~obsidian/Documents (container root as vault)"
 
