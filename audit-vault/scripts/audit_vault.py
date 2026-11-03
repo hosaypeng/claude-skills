@@ -30,10 +30,10 @@ MIN_CONTENT_LINES = 3
 NAMING_EXEMPT = {"CLAUDE", "_index"}
 NAME_RE = re.compile(
   r"^([a-z0-9]+|\d{4}-\d{2}-\d{2})(_([a-z0-9]+|\d{4}-\d{2}-\d{2}))*$")
-# Templates hold placeholders; the archive is frozen history.
+# The archive is frozen history.
 ARCHIVE = "60_archive/"
-ORPHAN_SKIP = ("templates/", "40_indexes/", ARCHIVE)
-EMPTY_SKIP = ("templates/", ARCHIVE)
+ORPHAN_SKIP = ("40_indexes/", ARCHIVE)
+EMPTY_SKIP = (ARCHIVE,)
 EMPTY_VALUES = {"", '""', "''", "[]", "{}", "null", "Null", "NULL", "~"}
 
 KEY_RE = re.compile(r"^([A-Za-z_][\w-]*)[ \t]*:[ \t]*(.*)$")
