@@ -57,7 +57,7 @@ ICLOUD_LABEL = "iCloud~md~obsidian/Documents (container root as vault)"
 
 # Files that hard-code vault paths. Home-relative; expanded at runtime.
 SOURCE_PATTERNS = [
-  "~/AGENTS.md",
+  "~/Code/agent-config/AGENTS.md",
   "~/.claude/AGENTS.md",
   "~/.codex/AGENTS.md",
   "~/.claude/CLAUDE.md",
