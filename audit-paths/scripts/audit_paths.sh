@@ -5,10 +5,11 @@ set -e
 # Usage: bash audit_paths.sh [memory|launchagents|all]
 
 MODE="${1:-all}"
-# The vault moved from iCloud to ~/Documents/obsidian; the old paths made this scan
-# silently cover only ~/.claude/CLAUDE.md while reporting "All paths valid".
+# Since 2026-11-03 ~/Documents/obsidian is a symlink to the vault in
+# iCloud~md~obsidian/Documents/obsidian. Claude keys memory by the resolved path, so
+# PROJECT_MEMORY uses the iCloud key; a stale key silently skips every memory file.
 VAULT="${HOME}/Documents/obsidian"
-PROJECT_MEMORY="${HOME}/.claude/projects/-Users-hsp-Documents-obsidian/memory"
+PROJECT_MEMORY="${HOME}/.claude/projects/-Users-hsp-Library-Mobile-Documents-iCloud-md-obsidian-Documents-obsidian/memory"
 LAUNCH_AGENTS="${HOME}/Library/LaunchAgents"
 
 TMPFILE=$(mktemp)

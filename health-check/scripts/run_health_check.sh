@@ -38,7 +38,7 @@ check_launchagents() {
 
 check_repo() {
   local repo="$1" name status unpushed
-  [ -d "$repo/.git" ] || return 0
+  [ -e "$repo/.git" ] || return 0  # -e: the vault's .git is a gitdir file
   name=$(basename "$repo")
   status=$(git -C "$repo" status --porcelain 2>/dev/null | wc -l | tr -d ' ')
   # Without an upstream `git log @{u}..HEAD` fails and the old code read that as
@@ -71,7 +71,7 @@ check_vault() {
   echo "--- Vault ---"
   local note_count
   if [ -d "$VAULT" ]; then
-    note_count=$(find "$VAULT" -name "*.md" -not -path "*/.git/*" 2>/dev/null | wc -l | tr -d ' ')
+    note_count=$(find -H "$VAULT" -name "*.md" -not -path "*/.git/*" 2>/dev/null | wc -l | tr -d ' ')
     echo "OK: Vault accessible ($note_count notes)"
   else
     echo "FAIL: Vault not found at $VAULT"

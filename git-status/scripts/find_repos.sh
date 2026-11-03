@@ -41,3 +41,10 @@ find "$HOME" -name ".git" -maxdepth 5 -type d \
   -not -path "*/com~apple~CloudDocs/*" \
   -not -path "*/.icloud/*" \
   2>/dev/null
+
+# The vault lives in iCloud (under the excluded Library/) behind the ~/Documents/obsidian
+# symlink, and its .git is a gitdir file, so the find above can never see it.
+vault="$HOME/Documents/obsidian"
+if git -C "$vault" rev-parse --git-dir >/dev/null 2>&1; then
+  echo "$vault/.git"
+fi

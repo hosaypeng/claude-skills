@@ -44,7 +44,15 @@ SIMILARITY_PAIR_LIMIT = 4000
 SIMILARITY_MAX_BYTES = 300_000
 LIST_LIMIT = 60
 MAX_SOURCE_BYTES = 1_000_000
-ICLOUD_MARK = "iCloud~md~obsidian"
+# Since 2026-11-03 the vault lives at iCloud~md~obsidian/Documents/obsidian (with
+# the journal beside it), reached via the ~/Documents/obsidian symlink. Only the
+# container root used as the vault (the pre-move layout) is stale, in path or
+# Claude memory-key form.
+ICLOUD_ROOT = re.compile(
+  r"iCloud~md~obsidian/Documents(?!/(?:obsidian|journal)\b|/\{)"
+  r"|-iCloud-md-obsidian-Documents(?!-(?:obsidian|journal)\b)"
+)
+ICLOUD_LABEL = "iCloud~md~obsidian/Documents (container root as vault)"
 
 # Files that hard-code vault paths. Home-relative; expanded at runtime.
 SOURCE_PATTERNS = [
@@ -59,7 +67,8 @@ SOURCE_PATTERNS = [
   "~/Library/LaunchAgents/*.plist",
   "~/Code/agent-config/bin/*",
   "~/Code/macos-recovery-setup/RECOVERY.md",
-  "~/.claude/projects/%s/memory/*.md" % str(CANON_VAULT).replace("/", "-"),
+  # Claude keys memory by the resolved cwd, every non-alphanumeric char -> "-".
+  "~/.claude/projects/%s/memory/*.md" % re.sub(r"[^A-Za-z0-9]", "-", str(CANON_VAULT.resolve())),
 ]
 
 # A path component separator, also as it appears split across Python/shell
@@ -696,9 +705,9 @@ def find_icloud(sources: List[Source]) -> List[str]:
   rows: List[str] = []
   for src in sources:
     for number, line in enumerate(src.text.split("\n"), 1):
-      at = line.find(ICLOUD_MARK)
-      if at >= 0:
-        excerpt = line[max(0, at - 40):at + len(ICLOUD_MARK) + 40].strip()
+      hit = ICLOUD_ROOT.search(line)
+      if hit:
+        excerpt = line[max(0, hit.start() - 40):hit.end() + 40].strip()
         rows.append("  %s:%d  ...%s..." % (src.label, number, excerpt))
   return rows
 
@@ -954,7 +963,7 @@ def build_report(args: argparse.Namespace) -> Report:
   rep.dups = duplicate_risks(moves, suffixes, bare)
   icloud = find_icloud(sources)
   if icloud:
-    rep.standing.insert(0, "  %s still appears in:" % ICLOUD_MARK)
+    rep.standing.insert(0, "  %s still appears in:" % ICLOUD_LABEL)
     rep.standing[1:1] = icloud
   return rep
 
