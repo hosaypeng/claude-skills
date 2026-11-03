@@ -45,13 +45,12 @@ Every finding line starts with its severity: `[CRITICAL]`, `[WARNING]`, or `[COS
 
 - **Critical**: `BROKEN` wikilinks in note bodies, notes with no frontmatter, `INVALID` frontmatter tags
 - **Warning**:
-  - `MISSING` or empty required fields. Notes in `30_knowledge/` need `origin`, `tags`, `description`, `type`, `status`. Articles (have `source:`, are not `type: reference` or `origin: ai`) need `origin`, `title`, `source`, `author`, `published`, `created`, `description`, `tags`. Fields are required, not optional.
-  - `INVALID` `origin`, `type`, or `status` values
+  - `MISSING` or empty required fields. Notes in `30_knowledge/` need `tags`, `description`. Articles (have both `source:` and `author:`) need `title`, `source`, `author`, `published`, `created`, `description`, `tags`. Fields are required, not optional.
   - `MALFORMED` tags (an unclosed `[` list, or items starting with `#`, which YAML reads as comments)
   - `BROKEN` links in frontmatter, such as an author link with no note
   - `BODYTAG` in notes that are not clipped articles
   - `ORPHAN`, `NAMING`, `TOPLEVEL`, `DUPLICATE` basenames, `MISSING-DIR`
-- **Cosmetic**: `EMPTY` files, `QUOTED` tags, `BODYTAG` in clipped articles or `60_archive/`, invalid or malformed tags in `60_archive/`, a long human note without `summary`
+- **Cosmetic**: `EMPTY` files, `QUOTED` tags, `BODYTAG` in clipped articles or `60_archive/`, invalid or malformed tags in `60_archive/`, a long note without `summary`
 
 For each finding, suggest a specific fix (for example "Fill `published:` from the source page", "Create the target note or remove the link", "Move the note into a topic folder"). If nothing is found, confirm the vault is healthy.
 

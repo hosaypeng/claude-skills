@@ -16,11 +16,8 @@ from typing import Callable, Optional
 DEFAULT_VAULT = "~/Documents/obsidian"
 SEV_ORDER = {"Critical": 0, "Warning": 1, "Cosmetic": 2}
 TYPE_TAGS = {"journal", "index"}  # valid without a 40_indexes/ file of their own
-ORIGINS = ("human", "ai")
-TYPES = ("research", "reference", "personal", "book_summary", "workflow", "project")
-STATUSES = ("active", "archived", "draft")
-NOTE_FIELDS = ("origin", "tags", "description", "type", "status")
-ARTICLE_FIELDS = ("origin", "title", "source", "author", "published", "created",
+NOTE_FIELDS = ("tags", "description")
+ARTICLE_FIELDS = ("title", "source", "author", "published", "created",
                   "description", "tags")
 BOM = chr(0xFEFF)
 KNOWLEDGE_TOP_LEVEL = {"index.md", "papers.md", "nak_muay.md"}
@@ -397,21 +394,7 @@ def check_body_tags(v: Vault) -> list:
 # --- Frontmatter schema ---
 
 def is_article(note: Note) -> bool:
-  return "source" in note.fm and scalar(note, "type") != "reference" \
-    and scalar(note, "origin") != "ai"
-
-
-def invalid_values(note: Note) -> list:
-  out = []
-  for key, allowed in (("origin", ORIGINS), ("type", TYPES), ("status", STATUSES)):
-    f = note.fm.get(key)
-    if f is None or field_empty(f):
-      continue
-    val = scalar(note, key)
-    if val not in allowed:
-      out.append(Finding("Warning", "INVALID", f"{note.rel}:{f.line}",
-                         f"{key}: '{val}' (expected {'|'.join(allowed)})"))
-  return out
+  return "source" in note.fm and "author" in note.fm
 
 
 def missing_fields(note: Note, required: tuple) -> Optional[Finding]:
@@ -429,7 +412,7 @@ def missing_fields(note: Note, required: tuple) -> Optional[Finding]:
 
 def summary_finding(note: Note) -> Optional[Finding]:
   count = len(note.lines) - (1 if note.lines and note.lines[-1] == "" else 0)
-  if count <= LONG_NOTE_LINES or "source" in note.fm or scalar(note, "origin") != "human":
+  if count <= LONG_NOTE_LINES or "source" in note.fm:
     return None
   f = note.fm.get("summary")
   if f is not None and not field_empty(f):
@@ -442,7 +425,7 @@ def schema_findings(note: Note) -> list:
     return [Finding("Critical", "MISSING", note.rel, "No frontmatter found")]
   required = ARTICLE_FIELDS if is_article(note) else NOTE_FIELDS
   found = [missing_fields(note, required), summary_finding(note)]
-  return [f for f in found if f] + invalid_values(note)
+  return [f for f in found if f]
 
 
 def check_schema(v: Vault) -> list:
