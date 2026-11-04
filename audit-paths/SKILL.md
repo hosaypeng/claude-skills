@@ -37,5 +37,6 @@ If no dead paths are found, confirm all paths are valid.
 
 - **Script exits with non-zero code**: Exit code = number of dead paths found. This is expected — not an error.
 - **False positives for relative paths**: The script resolves relative paths against the vault root. If a path is relative to a different base, it may false-positive.
-- **LaunchAgent paths that look dead but work**: Some plists reference paths created at runtime (log dirs, PID files). Verify before fixing.
+- **What it skips on purpose**: lines containing a removal word (deleted, removed, uninstalled, retired, dropped, gone, stale, absent, left), because memory records name absent paths deliberately. It also skips globs and braces, `<placeholders>`, `...`, `$(…)`, `/Volumes/` paths, and command strings whose first word is an existing executable. To mark a deliberately absent path, put one of those words on its line. Test changes with `AUDIT_MEMORY_DIR=<fixture dir> bash scripts/audit_paths.sh memory`.
+- **LaunchAgent paths that look dead but work**: a `.log` path counts as alive when its folder exists, since launchd creates it on first output. Other runtime paths (PID files) may still flag; verify before fixing.
 - **Permission denied on LaunchAgents**: iCloud-managed plists may have restricted permissions. Run with standard user permissions — don't sudo.

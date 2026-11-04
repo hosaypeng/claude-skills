@@ -9,7 +9,9 @@ MODE="${1:-all}"
 # iCloud~md~obsidian/Documents/obsidian. Claude keys memory by the resolved path, so
 # PROJECT_MEMORY uses the iCloud key; a stale key silently skips every memory file.
 VAULT="${HOME}/Documents/obsidian"
-PROJECT_MEMORY="${HOME}/.claude/projects/-Users-hsp-Library-Mobile-Documents-iCloud-md-obsidian-Documents-obsidian/memory"
+PROJECT_MEMORY="${AUDIT_MEMORY_DIR:-${HOME}/.claude/projects/-Users-hsp-Library-Mobile-Documents-iCloud-md-obsidian-Documents-obsidian/memory}"
+# A line with one of these words records a removal, so its paths are absent on purpose.
+RECORD_WORDS='deleted|removed|uninstalled|retired|dropped|gone|stale|absent|left'
 LAUNCH_AGENTS="${HOME}/Library/LaunchAgents"
 
 TMPFILE=$(mktemp)
@@ -92,14 +94,22 @@ scan_markdown_files() {
   fi
 
   for file in "${files[@]}"; do
-    # Extract backtick-quoted paths that start with ~, /, or $
-    grep -oE '`[~/\$][^`]{2,}`' "$file" 2>/dev/null | sed 's/^`//;s/`$//' | while IFS= read -r candidate; do
-      # Skip commands
-      case "$candidate" in
-        git\ *|npm\ *|pip\ *|claude\ *|source\ *|python\ *|bash\ *|launchctl\ *|mv\ *|rm\ *|cp\ *|find\ *|grep\ *|cat\ *) continue ;;
-        *\**) continue ;;
-      esac
-      check_path "$file" "$candidate"
+    # Lines holding backtick-quoted paths that start with ~, /, or $
+    grep -E '`[~/\$][^`]{2,}`' "$file" 2>/dev/null | while IFS= read -r line; do
+      echo "$line" | grep -qiwE "($RECORD_WORDS)" && continue
+      echo "$line" | grep -oE '`[~/\$][^`]{2,}`' | sed 's/^`//;s/`$//' | while IFS= read -r candidate; do
+        # Skip commands, globs, placeholders, command substitutions, unmounted drives
+        case "$candidate" in
+          git\ *|npm\ *|pip\ *|claude\ *|source\ *|python\ *|bash\ *|launchctl\ *|mv\ *|rm\ *|cp\ *|find\ *|grep\ *|cat\ *) continue ;;
+          *\**|*\{*|*\<*|*...*|*'$('*|/Volumes/*) continue ;;
+        esac
+        # Command strings: an existing executable followed by arguments
+        if [[ "$candidate" == *" "* ]]; then
+          local first="${candidate%% *}"
+          [ -f "$first" ] && [ -x "$first" ] && continue
+        fi
+        check_path "$file" "$candidate"
+      done
     done
   done
 
@@ -130,7 +140,8 @@ scan_launchagents() {
       [[ -z "$path" ]] && continue
       # Skip PATH env vars (contain colons)
       [[ "$path" == *:* ]] && continue
-      if [ -e "$path" ]; then
+      # A log launchd hasn't written yet is fine if its folder exists
+      if [ -e "$path" ] || { [[ "$path" == *.log ]] && [ -d "$(dirname "$path")" ]; }; then
         increment alive
       else
         echo "DEAD | ${plist_name} | $path"
