@@ -6,6 +6,3 @@ __pycache__/
 # Externally managed skill content (not this repo's work)
 superset/
 synced/
-
-# Generated audit output (rewritten every run; contains local paths)
-audit-paths/last_audit.log
