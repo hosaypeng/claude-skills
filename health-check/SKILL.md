@@ -54,7 +54,6 @@ Not scheduled. It runs only when invoked. To run it daily, create a LaunchAgent 
 
 ## See also
 
-- **`/git-status`** — repo-by-repo detail (stale branches, dirty trees). Health-check only counts.
 - **`/audit-paths`** — the dead-path table with suggested fixes.
 
 ## Troubleshooting

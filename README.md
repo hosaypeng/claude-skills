@@ -9,10 +9,8 @@ A collection of reusable skills for [Claude Code](https://docs.anthropic.com/en/
 | `audit-paths` | Scan CLAUDE.md, memory files and LaunchAgent plists for dead file and directory paths |
 | `audit-vault` | Read-only audit of the Obsidian vault: broken wikilinks, invalid tags, frontmatter schema, orphans, file naming |
 | `clean-caches` | Report and clear regenerable app caches via the `clean_caches` command |
-| `git-status` | Scan all local git repos for uncommitted changes and unpushed commits |
 | `health-check` | Pass/fail sweep of LaunchAgents, git repos, vault, recovery-repo drift and config sync |
 | `ocr` | OCR a scanned PDF or image locally with GLM-OCR (Ollama) into a Markdown file |
-| `persist-state` | Save current agent work state for resumable workflows |
 | `push` | Commit staged changes and push to GitHub remote |
 | `update-dependencies` | After vault moves, renames or deletions, find stale references in config, hooks, scripts, LaunchAgents, memory and wikilinks |
 
