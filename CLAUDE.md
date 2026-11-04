@@ -6,7 +6,7 @@ This repo contains all Claude Code skills — reusable, slash-command-invocable 
 
 Each skill is a directory containing:
 
-- **`SKILL.md`** (required) — YAML frontmatter with `name`, `description`, `invocable: true`, plus orchestration instructions in markdown. This is the entry point Claude reads when the skill is invoked.
+- **`SKILL.md`** (required) — YAML frontmatter with `name`, `description`, `user-invocable: true`, plus orchestration instructions in markdown. This is the entry point Claude reads when the skill is invoked.
 - **`scripts/`** (optional) — Bash scripts that do the heavy lifting. Keep logic here, not inline in SKILL.md.
 - **`references/`** (optional) — Detailed templates, format specs, and examples loaded on demand.
 
@@ -28,7 +28,7 @@ Python scripts are allowed if stdlib-only, Python 3.9-compatible, and invoked as
 ---
 name: skill-name
 description: "One-line description with trigger phrases"
-invocable: true
+user-invocable: true
 ---
 ```
 
@@ -43,7 +43,7 @@ Include trigger phrases in the description so Claude knows when to invoke the sk
 ## Adding a New Skill
 
 1. Create a directory: `mkdir skill-name`
-2. Create `skill-name/SKILL.md` with YAML frontmatter (`name`, `description`, `invocable: true`)
+2. Create `skill-name/SKILL.md` with YAML frontmatter (`name`, `description`, `user-invocable: true`)
 3. Add trigger phrases to the description field
 4. IF the skill needs shell logic → THEN create `skill-name/scripts/` and add `.sh` files
 5. IF SKILL.md exceeds ~800 words → THEN move templates to `skill-name/references/`
