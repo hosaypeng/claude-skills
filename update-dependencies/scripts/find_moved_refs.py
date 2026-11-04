@@ -44,16 +44,16 @@ SIMILARITY_PAIR_LIMIT = 4000
 SIMILARITY_MAX_BYTES = 300_000
 LIST_LIMIT = 60
 MAX_SOURCE_BYTES = 1_000_000
-# Since 2026-11-03 the vault lives at iCloud~md~obsidian/Documents/obsidian (with
-# the journal beside it), reached via the ~/Documents/obsidian symlink. Only the
-# container root used as the vault (the pre-move layout) is stale, in path or
-# Claude memory-key form.
+# Since 2026-11-03 the vault lives at iCloud~md~obsidian/Documents/obsidian, reached
+# via the ~/Documents/obsidian symlink. Since 2026-11-04 the journal is the vault's
+# 10_journal/ again, so the old sibling journal vault is stale too, as is the
+# container root used as the vault (the pre-move layout), in path or memory-key form.
 ICLOUD_ROOT = re.compile(
   # Inner lookahead rejects near-misses: obsidian-old, obsidian.bak, iCloud's "obsidian 2"
-  r"iCloud~md~obsidian/Documents(?!/(?:obsidian|journal)(?!\w|[.\-]\w| \d)|/\{)"
-  r"|-iCloud-md-obsidian-Documents(?!-(?:obsidian|journal)(?!\w|[.\-]\w))"
+  r"iCloud~md~obsidian/Documents(?!/obsidian(?!\w|[.\-]\w| \d)|/\{)"
+  r"|-iCloud-md-obsidian-Documents(?!-obsidian(?!\w|[.\-]\w))"
 )
-ICLOUD_LABEL = "iCloud~md~obsidian/Documents (container root as vault)"
+ICLOUD_LABEL = "iCloud~md~obsidian/Documents (container root or old journal vault)"
 
 # Files that hard-code vault paths. Home-relative; expanded at runtime.
 SOURCE_PATTERNS = [
