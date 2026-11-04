@@ -27,10 +27,13 @@ MIN_CONTENT_LINES = 3
 NAMING_EXEMPT = {"CLAUDE", "_index"}
 NAME_RE = re.compile(
   r"^([a-z0-9]+|\d{4}-\d{2}-\d{2})(_([a-z0-9]+|\d{4}-\d{2}-\d{2}))*$")
-# The archive is frozen history.
+# The archive is frozen history. The journal is read-only: agents never edit it.
 ARCHIVE = "60_archive/"
-ORPHAN_SKIP = ("40_indexes/", ARCHIVE)
-EMPTY_SKIP = (ARCHIVE,)
+JOURNAL = "10_journal/"
+ORPHAN_SKIP = ("40_indexes/", ARCHIVE, JOURNAL)
+EMPTY_SKIP = (ARCHIVE, JOURNAL)
+# Date-named notes (journal entries, daily logs) are records, not topic notes.
+DATED_RE = re.compile(r"^\d{4}-\d{2}-\d{2}\.md$")
 EMPTY_VALUES = {"", '""', "''", "[]", "{}", "null", "Null", "NULL", "~"}
 
 KEY_RE = re.compile(r"^([A-Za-z_][\w-]*)[ \t]*:[ \t]*(.*)$")
@@ -319,7 +322,10 @@ def check_links(v: Vault) -> list:
     base = ref.target.rsplit("/", 1)[-1].lower()
     if "/" in ref.target and v.note_index.get(base):
       msg += f" (no file at that path; same name exists at {', '.join(v.note_index[base])})"
-    severity = "Warning" if ref.in_fm else "Critical"  # an unresolved author link is metadata
+    # An unresolved author link is metadata. A journal link can only be fixed
+    # on the target side, since the journal is read-only.
+    severity = "Cosmetic" if ref.src.startswith(JOURNAL) else \
+      "Warning" if ref.in_fm else "Critical"
     out.append(Finding(severity, "BROKEN", f"{ref.src}:{ref.line}", msg))
   return out
 
@@ -469,7 +475,8 @@ def check_orphans(v: Vault) -> list:
     inbound |= {rel for rel in ref.notes if rel != ref.src}
   out = []
   for rel, note in sorted(v.notes.items()):
-    if rel.startswith(ORPHAN_SKIP) or os.path.basename(rel) in ("_index.md", "CLAUDE.md"):
+    name = os.path.basename(rel)
+    if rel.startswith(ORPHAN_SKIP) or name in ("_index.md", "CLAUDE.md") or DATED_RE.match(name):
       continue
     if rel not in inbound and not has_topic_tag(v, note):
       out.append(Finding("Warning", "ORPHAN", rel, "No inbound wikilink and no topic-index tag"))
