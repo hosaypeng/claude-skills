@@ -30,16 +30,16 @@ argument-hint: "[report|run|scan] [--cowork]"
    - numbered decisions for the user
 
    If the disk is under ~80% full, say nothing is urgent.
-4. **Clear only after the user approves in chat:** `~/.local/bin/clean_caches run -y`. Add `--cowork` only if the user asked for the Cowork VM image.
-   - Without `-y` the command refuses to run outside a terminal.
+4. **Hand the user the clear command; never run it yourself.** Claude Code never deletes files, caches included. Give the user `! ~/.local/bin/clean_caches run -y` to paste, so the output lands in the conversation. Add `--cowork` only if the user asked for the Cowork VM image.
+   - Without `-y` the command refuses to run outside a terminal, and `!` doesn't count as one.
    - If an item is skipped because its app is running, ask the user to quit that app, then re-run. Never quit or kill apps yourself. The command itself quits and relaunches Google Drive.
-5. **Report:**
+5. **Report, from the output the user pasted:**
    - the `freed` line, which is measured with `df` and is the real number. If other disk activity outweighed the gain, the line reads `no net gain measured` instead.
    - any `skipped: …`, `refused: …` or `failed: …` lines, verbatim. If Drive didn't quit, it is relaunched anyway when the command exits.
 
 ## Rules
 
-- Never `rm` cache paths by hand, and never run `uv cache clean --force`.
+- Never run `clean_caches run` yourself, never `rm` cache paths, and never run `uv cache clean --force`. Deleting is the user's step.
 - A new target goes into the command, never into an ad-hoc command. That means three changes: add it to `collect_items`, add its basename to the `safe_target` allowlist, and add a fake-HOME test case.
 - Never clear `in-app` items. Give the user the in-app path instead.
 

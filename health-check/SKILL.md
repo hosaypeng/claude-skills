@@ -45,7 +45,7 @@ After the script, manually verify both CLAUDE.md files:
   - unpushed / uncommitted → `git -C <repo> push` or commit; `no-upstream` → `git push -u origin <branch>`
   - dead paths → `/audit-paths`
   - Brewfile / repos.txt drift → edit the file in `~/Code/macos-recovery-setup`
-  - large log → inspect, then trash or rotate it
+  - large log → inspect it, then give the user the command to delete or truncate it (Claude Code never deletes files)
 - A WARN for a repo you deliberately keep local-only (no remote) is informational; say so rather than nagging.
 
 ## Scheduling
