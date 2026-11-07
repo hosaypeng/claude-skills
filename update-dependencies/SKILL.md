@@ -48,9 +48,8 @@ Show the "Wikilinks to update" list and ask first. Proposals marked `[ambiguous]
 
 - Never auto-fix external files. Report `file:line` with the proposed edit and let the user decide.
 - A hit tagged `[line also mentions the new path]` usually narrates the move (a memory note). It is history, not a stale reference.
-- Never hand-edit `50_areas/personal/directory_tree.md`. A Stop hook regenerates it from `~/Code/agent-config/bin/update_dir_tree.py`, so fix the generator.
 - The vault's `10_journal/` (alias `~/Documents/journal/`) is read-only: never rewrite links or move files in it.
-- Ask before deleting a note. Private files listed by exact path in the vault `.gitignore` (such as `directory_tree.md`) stay where they are: a moved copy is no longer ignored and the next auto-sync pushes it.
+- Ask before deleting a note. Private files listed by exact path in the vault `.gitignore` (such as `mac_disaster_recovery.md`) stay where they are: a moved copy is no longer ignored and the next auto-sync pushes it.
 - This skill sits in a public repo: keep secrets and personal data out of it.
 
 ## Troubleshooting

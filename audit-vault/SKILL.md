@@ -14,10 +14,10 @@ argument-hint: "[full|tags|frontmatter|links|orphans|relevance]"
 Parse the argument; no argument means `full`.
 
 - **`full`**: every check below except `relevance`
-- **`tags`**: frontmatter tags (valid = stems of `40_indexes/*.md`, plus `journal` and `index`) and inline `#tags` in note bodies
+- **`tags`**: frontmatter tags (valid = the backticked tags on the `- **Tags:**` line of the vault's `CLAUDE.md`, plus `journal` and `index`) and inline `#tags` in note bodies
 - **`frontmatter`**: schema of `30_knowledge/` notes and articles, and tags on `00_inbox/` notes
 - **`links`**: broken wikilinks and duplicate basenames
-- **`orphans`**: orphan notes (no inbound link and no topic-index tag), near-empty files, snake_case file names, loose notes at the top of `30_knowledge/`. Date-named notes (`YYYY-MM-DD.md`) are records, so they are not orphan-checked. The read-only `10_journal/` is skipped for orphans and near-empty files.
+- **`orphans`**: orphan notes (no inbound link and no topic tag), near-empty files, snake_case file names, loose notes at the top of `30_knowledge/`. Date-named notes (`YYYY-MM-DD.md`) are records, so they are not orphan-checked. The read-only `10_journal/` is skipped for orphans and near-empty files.
 - **`relevance`**: opt-in tag relevance review (see below)
 
 ## Execution
@@ -59,6 +59,7 @@ A line starting `[ERROR] <check>:` means that check crashed, and `[ERROR] load: 
 ## Troubleshooting
 
 - **"Vault not found" (exit 2)**: `~/Documents/obsidian` does not exist at that path. Set `VAULT=/actual/path` and rerun.
-- **`MISSING-DIR` warning**: `40_indexes/`, `30_knowledge/`, or `00_inbox/` is missing, so that check was skipped. Confirm the vault path. Without `40_indexes/`, tag and orphan results are not meaningful.
+- **`MISSING-DIR` warning**: `30_knowledge/` or `00_inbox/` is missing, so that check was skipped. Confirm the vault path.
+- **`NO-TAG-LIST` critical**: the vault's `CLAUDE.md` has no `- **Tags:**` line with backticked tags, so tag and orphan results are not meaningful. Restore that line — it is the vault's only tag vocabulary.
 - **A `BROKEN` link you believe is fine**: links are matched case-insensitively by name, and path links (`[[folder/note]]`) by path suffix. Dot-folders (`.obsidian`, `.trash`) are not indexed, and a note moved out of the linked path counts as broken. Open the link in Obsidian to confirm. Code spans and fenced blocks are ignored.
 - **`[ERROR] load:` or `[ERROR] <check>:`**: one file is unreadable or one check failed. Rerun just that mode to isolate it. Do not "fix" the vault in response.

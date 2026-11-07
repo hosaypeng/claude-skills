@@ -52,6 +52,6 @@ argument-hint: "[report|run|scan] [--cowork]"
 
 ## Troubleshooting
 
-- **`clean_caches: command not found`:** run `install.sh` in the recovery repo. Alternatively, `ln -s ~/Code/macos-recovery-setup/bin/clean_caches ~/.local/bin/clean_caches`.
+- **`clean_caches: command not found`:** run `install.sh` in the recovery repo. Alternatively, `ln -s ~/Code/mac-config/bin/clean_caches ~/.local/bin/clean_caches`.
 - **Homebrew `failed:` followed by a `sudo chown` hint (a root-owned keg):** the user runs `! sudo chown -R $USER <keg path>`, then re-runs the command.
 - **An item that always shows `skip: quit <App> first`:** the app is still running in the background. Ask the user to quit it fully (⌘Q, or from its menu-bar icon).

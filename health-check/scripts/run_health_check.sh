@@ -3,7 +3,7 @@
 # an earlier one fails, so no `set -e` - a broken brew call must not hide the sections
 # after it. Output lines start with OK / WARN / FAIL / SKIP for grep-ability.
 
-RECOVERY="$HOME/Code/macos-recovery-setup"
+RECOVERY="$HOME/Code/mac-config"
 VAULT="$HOME/Documents/obsidian"
 SKILLS="$HOME/.claude/skills"
 

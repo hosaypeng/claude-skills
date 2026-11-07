@@ -67,7 +67,7 @@ SOURCE_PATTERNS = [
   "~/.claude/skills/*/scripts/*",
   "~/Library/LaunchAgents/*.plist",
   "~/Code/agent-config/bin/*",
-  "~/Code/macos-recovery-setup/RECOVERY.md",
+  "~/Code/mac-config/RECOVERY.md",
   # Claude keys memory by the resolved cwd, every non-alphanumeric char -> "-".
   "~/.claude/projects/%s/memory/*.md" % re.sub(r"[^A-Za-z0-9]", "-", str(CANON_VAULT.resolve())),
 ]

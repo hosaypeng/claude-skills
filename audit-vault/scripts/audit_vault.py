@@ -15,7 +15,7 @@ from typing import Callable, Optional
 
 DEFAULT_VAULT = "~/Documents/obsidian"
 SEV_ORDER = {"Critical": 0, "Warning": 1, "Cosmetic": 2}
-TYPE_TAGS = {"journal", "index"}  # valid without a 40_indexes/ file of their own
+TYPE_TAGS = {"journal", "index"}  # structural tags, not topics: never orphan-proof a note
 NOTE_FIELDS = ("tags", "description")
 ARTICLE_FIELDS = ("title", "source", "author", "published", "created",
                   "description", "tags")
@@ -30,7 +30,7 @@ NAME_RE = re.compile(
 # The archive is frozen history. The journal is read-only: agents never edit it.
 ARCHIVE = "60_archive/"
 JOURNAL = "10_journal/"
-ORPHAN_SKIP = ("40_indexes/", ARCHIVE, JOURNAL)
+ORPHAN_SKIP = (ARCHIVE, JOURNAL)
 EMPTY_SKIP = (ARCHIVE, JOURNAL)
 # Date-named notes (journal entries, daily logs) are records, not topic notes.
 DATED_RE = re.compile(r"^\d{4}-\d{2}-\d{2}\.md$")
@@ -254,13 +254,38 @@ def add_suffixes(index: dict, key: str, rel: str) -> None:
     index.setdefault("/".join(parts[i:]), []).append(rel)
 
 
-def load_index_tags(root: str) -> tuple:
-  """Return (valid tags, tags with a topic index), or (None, set()) without 40_indexes/."""
-  folder = os.path.join(root, "40_indexes")
-  if not os.path.isdir(folder):
+def load_valid_tags(root: str) -> tuple:
+  """Return (valid tags, topic tags) from the CLAUDE.md Tags rule, or (None, set()).
+
+  CLAUDE.md is the single source of truth for the tag vocabulary: its
+  `- **Tags:**` line lists every valid tag in backticks, topic tags first and
+  the type tags (journal, index) last. Returns (None, set()) when the file or
+  that line is missing, which the tag checks report as a Critical finding.
+  """
+  path = os.path.join(root, "CLAUDE.md")
+  try:
+    with open(path, encoding="utf-8") as fh:
+      lines = fh.read().splitlines()
+  except OSError:
     return None, set()
-  stems = {n[:-3] for n in os.listdir(folder) if n.endswith(".md") and n != "_index.md"}
-  return stems | TYPE_TAGS, stems
+  for i, line in enumerate(lines):
+    if not line.lstrip().startswith("- **Tags:**"):
+      continue
+    block = [line]  # the rule may wrap; read to the next bullet, heading or blank
+    for nxt in lines[i + 1:]:
+      stripped = nxt.strip()
+      if not stripped or stripped.startswith("- ") or stripped.startswith("#"):
+        break
+      block.append(stripped)
+    text = " ".join(block)
+    head = text.find("Valid topic tags:")
+    if head != -1:
+      text = text[head:]  # ignore backticked words in the rule's preamble
+    names = set(re.findall(r"`([a-z0-9][a-z0-9_-]*)`", text))
+    if not names:
+      return None, set()
+    return names | TYPE_TAGS, names - TYPE_TAGS
+  return None, set()
 
 
 def load_vault(root: str) -> Vault:
@@ -282,7 +307,7 @@ def load_vault(root: str) -> Vault:
         errors.append(Finding("Critical", "UNREADABLE", rel, exc.strerror or "read failed"))
         continue
       add_suffixes(note_index, rel[:-3].lower(), rel)
-  valid, topics = load_index_tags(root)
+  valid, topics = load_valid_tags(root)
   return Vault(root, notes, note_index, file_index, valid, topics, errors)
 
 
@@ -344,8 +369,8 @@ def check_duplicates(v: Vault) -> list:
 
 def check_fm_tags(v: Vault) -> list:
   if v.valid_tags is None:
-    return [Finding("Warning", "MISSING-DIR", "40_indexes/",
-                    "folder not found; tag validity not checked")]
+    return [Finding("Critical", "NO-TAG-LIST", "CLAUDE.md",
+                    "no '- **Tags:**' line with backticked tags; tag validity not checked")]
   out = []
   for rel, note in sorted(v.notes.items()):
     out += note_tag_findings(v, note)
@@ -371,7 +396,7 @@ def note_tag_findings(v: Vault, note: Note) -> list:
   for t in tags:
     if not t.hashed and t.name not in v.valid_tags:
       out.append(Finding(sev("Critical"), "INVALID", f"{rel}:{t.line}",
-                         f"Tag '{t.name}' has no file in 40_indexes/"))
+                         f"Tag '{t.name}' is not in the CLAUDE.md tag list"))
   quoted = [t.name for t in tags if t.quoted]
   if quoted:
     out.append(Finding("Cosmetic", "QUOTED", f"{rel}:{note.fm['tags'].line}",
@@ -392,7 +417,7 @@ def check_body_tags(v: Vault) -> list:
       listing = ", ".join(f"#{t} (L{ln})" for ln, t in hits)
       out.append(Finding("Cosmetic", "BODYTAG", rel, f"{reason}: {listing}"))
       continue
-    out += [Finding("Warning", "BODYTAG", f"{rel}:{ln}", f"#{t} has no file in 40_indexes/")
+    out += [Finding("Warning", "BODYTAG", f"{rel}:{ln}", f"#{t} is not in the CLAUDE.md tag list")
             for ln, t in hits]
   return out
 
@@ -470,6 +495,9 @@ def has_topic_tag(v: Vault, note: Note) -> bool:
 
 
 def check_orphans(v: Vault) -> list:
+  if v.valid_tags is None:
+    return [Finding("Critical", "NO-TAG-LIST", "CLAUDE.md",
+                    "no '- **Tags:**' line with backticked tags; orphans not checked")]
   inbound = set()
   for ref in all_links(v):
     inbound |= {rel for rel in ref.notes if rel != ref.src}
@@ -479,7 +507,7 @@ def check_orphans(v: Vault) -> list:
     if rel.startswith(ORPHAN_SKIP) or name in ("_index.md", "CLAUDE.md") or DATED_RE.match(name):
       continue
     if rel not in inbound and not has_topic_tag(v, note):
-      out.append(Finding("Warning", "ORPHAN", rel, "No inbound wikilink and no topic-index tag"))
+      out.append(Finding("Warning", "ORPHAN", rel, "No inbound wikilink and no topic tag"))
   return out
 
 

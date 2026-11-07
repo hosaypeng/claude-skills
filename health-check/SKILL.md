@@ -33,7 +33,7 @@ After the script, manually verify both CLAUDE.md files:
 1. **`~/.claude/CLAUDE.md`** — Check that any referenced skill names still exist in `~/.claude/skills/`.
 2. **Vault `CLAUDE.md`** — For each concrete path referenced (vault dirs, quick references):
    - Verify the path exists on disk
-   - Verify the tag list matches `40_indexes/*.md` (excluding `_index.md`)
+   - Verify the `- **Tags:**` line still lists every tag in backticks, on one line — it is the vault's only tag vocabulary, read by `audit-vault`
 3. Report any stale references found. Auto-fix non-destructive issues (update counts, fix paths). Ask before removing rules or references.
 
 ## Interpreting results
@@ -44,7 +44,7 @@ After the script, manually verify both CLAUDE.md files:
   - agent with non-zero exit → read its StandardErrorPath log, then decide whether to fix or `launchctl bootout` it
   - unpushed / uncommitted → `git -C <repo> push` or commit; `no-upstream` → `git push -u origin <branch>`
   - dead paths → `/audit-paths`
-  - Brewfile / repos.txt drift → edit the file in `~/Code/macos-recovery-setup`
+  - Brewfile / repos.txt drift → edit the file in `~/Code/mac-config`
   - large log → inspect it, then give the user the command to delete or truncate it (Claude Code never deletes files)
 - A WARN for a repo you deliberately keep local-only (no remote) is informational; say so rather than nagging.
 
